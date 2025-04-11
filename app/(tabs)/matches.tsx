@@ -1,200 +1,125 @@
 // app/(tabs)/matches.tsx
 
-import React, { useState } from "react";
-import { StyleSheet, View, TouchableOpacity, FlatList } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Card } from "@/components/ui/Card";
+import { MatchCard } from "@/components/match/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { useMatches } from "@/hooks/useMatches";
+import { useAuth } from "@/hooks/useAuth";
+import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { MatchesMockData, Match, MyMatch, OpenMatch } from "@/types/match";
-
-// Mock data para la pantalla de partidos
-const matchesMockData: MatchesMockData = {
-  myMatches: [
-    {
-      id: "1",
-      date: "2025-04-12T18:00:00",
-      location: "Cancha El Campín",
-      type: "5v5",
-      organizer: "Juan Pérez",
-      players: {
-        confirmed: 8,
-        total: 10,
-      },
-      status: "pending",
-    },
-    {
-      id: "2",
-      date: "2025-04-15T20:00:00",
-      location: "Cancha La Bombonera",
-      type: "7v7",
-      organizer: "Carlos Rodriguez",
-      players: {
-        confirmed: 12,
-        total: 14,
-      },
-      status: "confirmed",
-    },
-  ],
-  openMatches: [
-    {
-      id: "3",
-      date: "2025-04-13T17:00:00",
-      location: "Cancha Gol Center",
-      type: "5v5",
-      organizer: "Andrea Gómez",
-      players: {
-        confirmed: 8,
-        total: 10,
-      },
-      distance: "3.2 km",
-      level: "Intermedio",
-    },
-    {
-      id: "4",
-      date: "2025-04-14T19:00:00",
-      location: "La Cancha",
-      type: "7v7",
-      organizer: "Miguel Torres",
-      players: {
-        confirmed: 10,
-        total: 14,
-      },
-      distance: "1.8 km",
-      level: "Avanzado",
-    },
-    {
-      id: "5",
-      date: "2025-04-16T21:00:00",
-      location: "SportCenter",
-      type: "11v11",
-      organizer: "Laura Sánchez",
-      players: {
-        confirmed: 15,
-        total: 22,
-      },
-      distance: "4.5 km",
-      level: "Todos los niveles",
-    },
-  ],
-};
+import { useNotification } from "@/context/NotificationContext";
 
 type TabType = "myMatches" | "openMatches";
 
 export default function MatchesScreen() {
   const colorScheme = useColorScheme();
+  const { user, requireAuth } = useAuth();
+  const {
+    matches,
+    filteredMatches,
+    myMatches,
+    myCreatedMatches,
+    fetchMatches,
+    setFilters,
+    resetFilters,
+    isLoading,
+    error,
+  } = useMatches();
+  const { showNotification } = useNotification();
+
   const [activeTab, setActiveTab] = useState<TabType>("myMatches");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const renderMatchItem = ({ item, type }: { item: Match; type: TabType }) => {
-    const matchDate = new Date(item.date);
-    const formattedDate = matchDate.toLocaleDateString("es-ES", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-    const formattedTime = matchDate.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  // Verificar autenticación al montar componente
+  useEffect(() => {
+    requireAuth();
+  }, []);
 
-    return (
-      <Card style={styles.matchCard} onPress={() => {}} shadow="m">
-        <View style={styles.matchHeader}>
-          <View style={styles.dateTimeContainer}>
-            <ThemedText type="body" weight="semiBold">
-              {formattedDate}
-            </ThemedText>
-            <ThemedText type="body">{formattedTime}</ThemedText>
-          </View>
+  // Cargar partidos al montar componente
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
-          <ThemedView style={styles.typeBadge} rounded="s">
-            <ThemedText style={styles.typeText}>{item.type}</ThemedText>
-          </ThemedView>
-        </View>
+  // Actualizar cuando la pantalla obtiene foco
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        // Actualizar partidos en segundo plano
+        fetchMatches(user.uid, true);
+      }
+    }, [user])
+  );
 
-        <View style={styles.matchDetails}>
-          <ThemedText type="body" weight="semiBold">
-            {item.location}
-          </ThemedText>
+  // Cargar datos iniciales
+  const loadData = async () => {
+    if (!user) return;
 
-          <View style={styles.infoRow}>
-            <ThemedText type="body" secondary>
-              Organizador: {item.organizer}
-            </ThemedText>
+    try {
+      await fetchMatches(user.uid, true);
+    } catch (error) {
+      console.error("Error al cargar partidos:", error);
+      showNotification("Error al cargar partidos. Intenta de nuevo.", "error");
+    }
+  };
 
-            {type === "openMatches" && "distance" in item && (
-              <ThemedText type="body" secondary>
-                {item.distance}
-              </ThemedText>
-            )}
-          </View>
+  // Cambiar entre pestañas
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
 
-          {type === "openMatches" && "level" in item && (
-            <ThemedText type="caption" style={styles.levelText}>
-              Nivel: {item.level}
-            </ThemedText>
-          )}
+    // Aplicar filtros según la pestaña
+    if (tab === "myMatches") {
+      // Combinar mis partidos creados y aquellos en los que participo
+      setFilters({ onlyMine: true, onlyJoined: true });
+    } else {
+      // Mostrar todos los partidos abiertos (resetear filtros)
+      resetFilters();
+    }
+  };
 
-          <View style={styles.playersContainer}>
-            <View style={styles.playersBar}>
-              <View
-                style={[
-                  styles.playersProgress,
-                  {
-                    width: `${
-                      (item.players.confirmed / item.players.total) * 100
-                    }%`,
-                    backgroundColor: "#1DB954",
-                  },
-                ]}
-              />
-            </View>
-            <ThemedText type="caption" secondary>
-              {item.players.confirmed}/{item.players.total} jugadores
-            </ThemedText>
-          </View>
-        </View>
+  // Manejar refresh
+  const onRefresh = async () => {
+    if (!user) return;
 
-        <View style={styles.actionContainer}>
-          {type === "myMatches" && "status" in item ? (
-            <View style={styles.myMatchActions}>
-              {item.status === "pending" ? (
-                <>
-                  <Button
-                    title="Confirmar"
-                    size="small"
-                    color="success"
-                    style={styles.actionButton}
-                  />
-                  <Button
-                    title="Cancelar"
-                    size="small"
-                    variant="outlined"
-                    color="danger"
-                    style={styles.actionButton}
-                  />
-                </>
-              ) : (
-                <ThemedView style={styles.confirmedBadge} rounded="s">
-                  <IconSymbol name="checkmark" size={16} color="white" />
-                  <ThemedText style={styles.confirmedText}>
-                    Confirmado
-                  </ThemedText>
-                </ThemedView>
-              )}
-            </View>
-          ) : (
-            <Button title="Unirse" size="small" style={styles.actionButton} />
-          )}
-        </View>
-      </Card>
-    );
+    setRefreshing(true);
+    await fetchMatches(user.uid, true);
+    setRefreshing(false);
+  };
+
+  // Navegación a crear partido
+  const handleCreateMatch = () => {
+    router.push("/match/create" as any);
+  };
+
+  // Determinar qué datos mostrar según la pestaña activa
+  const getDisplayMatches = () => {
+    if (activeTab === "myMatches") {
+      // Combinar partidos creados y partidos en los que participo
+      return [
+        ...myCreatedMatches,
+        ...myMatches.filter(
+          (match) => !myCreatedMatches.some((m) => m.id === match.id)
+        ),
+      ];
+    } else {
+      return filteredMatches;
+    }
   };
 
   return (
@@ -214,7 +139,7 @@ export default function MatchesScreen() {
             title="Crear"
             leftIcon="soccer.ball"
             size="small"
-            onPress={() => {}}
+            onPress={handleCreateMatch}
           />
         </View>
 
@@ -225,7 +150,7 @@ export default function MatchesScreen() {
               styles.tabButton,
               activeTab === "myMatches" && styles.activeTabButton,
             ]}
-            onPress={() => setActiveTab("myMatches")}
+            onPress={() => handleTabChange("myMatches")}
           >
             <ThemedText
               style={[
@@ -242,7 +167,7 @@ export default function MatchesScreen() {
               styles.tabButton,
               activeTab === "openMatches" && styles.activeTabButton,
             ]}
-            onPress={() => setActiveTab("openMatches")}
+            onPress={() => handleTabChange("openMatches")}
           >
             <ThemedText
               style={[
@@ -256,51 +181,62 @@ export default function MatchesScreen() {
         </View>
 
         {/* Lista de partidos */}
-        {activeTab === "myMatches" ? (
-          <FlatList
-            data={matchesMockData.myMatches}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) =>
-              renderMatchItem({ item, type: "myMatches" })
-            }
-            contentContainerStyle={styles.matchesList}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <ThemedView style={styles.emptyContainer}>
-                <ThemedText type="body" secondary style={styles.emptyText}>
-                  No hay partidos disponibles
-                </ThemedText>
-                <Button
-                  title="Crear partido"
-                  size="small"
-                  onPress={() => {}}
-                  style={styles.emptyButton}
-                />
-              </ThemedView>
-            }
-          />
+        {isLoading && matches.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={Colors[colorScheme].primary}
+            />
+            <ThemedText style={styles.loadingText}>
+              Cargando partidos...
+            </ThemedText>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <ThemedText type="subtitle" style={styles.errorTitle}>
+              Error al cargar partidos
+            </ThemedText>
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <Button
+              title="Reintentar"
+              onPress={loadData}
+              style={styles.retryButton}
+            />
+          </View>
         ) : (
           <FlatList
-            data={matchesMockData.openMatches}
+            data={getDisplayMatches()}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) =>
-              renderMatchItem({ item, type: "openMatches" })
-            }
             contentContainerStyle={styles.matchesList}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <ThemedView style={styles.emptyContainer}>
-                <ThemedText type="body" secondary style={styles.emptyText}>
-                  No hay partidos disponibles
-                </ThemedText>
-                <Button
-                  title="Buscar partidos"
-                  size="small"
-                  onPress={() => {}}
-                  style={styles.emptyButton}
-                />
-              </ThemedView>
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <ThemedText type="body" secondary style={styles.emptyText}>
+                  {activeTab === "myMatches"
+                    ? "No tienes partidos. ¡Crea uno o únete a partidos existentes!"
+                    : "No hay partidos disponibles en este momento."}
+                </ThemedText>
+                {activeTab === "myMatches" ? (
+                  <Button
+                    title="Crear partido"
+                    size="small"
+                    onPress={handleCreateMatch}
+                    style={styles.emptyButton}
+                  />
+                ) : (
+                  <Button
+                    title="Actualizar"
+                    size="small"
+                    onPress={onRefresh}
+                    style={styles.emptyButton}
+                  />
+                )}
+              </View>
+            }
+            renderItem={({ item }) => <MatchCard match={item} />}
           />
         )}
       </SafeAreaView>
@@ -336,88 +272,45 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   activeTabButton: {
-    borderBottomColor: "#1DB954",
+    borderBottomColor: Colors.light.primary,
   },
   tabText: {
     fontSize: 16,
     fontWeight: "500",
   },
   activeTabText: {
-    color: "#1DB954",
+    color: Colors.light.primary,
     fontWeight: "600",
   },
   matchesList: {
     paddingHorizontal: Spacing.l,
     paddingBottom: 120, // Extra padding for tab bar
   },
-  matchCard: {
-    marginBottom: Spacing.m,
-  },
-  matchHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.s,
+    padding: Spacing.l,
   },
-  dateTimeContainer: {
-    flexDirection: "column",
-  },
-  typeBadge: {
-    backgroundColor: "#1DB95420",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-  },
-  typeText: {
-    color: "#1DB954",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  matchDetails: {
-    marginBottom: Spacing.m,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: Spacing.xs,
-  },
-  levelText: {
-    marginTop: Spacing.xs,
-  },
-  playersContainer: {
+  loadingText: {
     marginTop: Spacing.m,
+    textAlign: "center",
   },
-  playersBar: {
-    height: 8,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
-    marginBottom: Spacing.xs,
-    overflow: "hidden",
-  },
-  playersProgress: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  actionContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  myMatchActions: {
-    flexDirection: "row",
-  },
-  actionButton: {
-    marginLeft: Spacing.s,
-  },
-  confirmedBadge: {
-    backgroundColor: "#4CAF50",
-    flexDirection: "row",
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
+    padding: Spacing.l,
   },
-  confirmedText: {
-    color: "white",
-    fontWeight: "600",
-    marginLeft: Spacing.xs,
+  errorTitle: {
+    marginBottom: Spacing.m,
+  },
+  errorText: {
+    textAlign: "center",
+    marginBottom: Spacing.l,
+  },
+  retryButton: {
+    minWidth: 120,
   },
   emptyContainer: {
     alignItems: "center",
@@ -426,6 +319,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginBottom: Spacing.m,
+    textAlign: "center",
   },
   emptyButton: {
     minWidth: 150,

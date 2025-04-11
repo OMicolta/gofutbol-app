@@ -1,53 +1,145 @@
-// app\(tabs)\index.tsx
+// app/(tabs)/index.tsx
 
-import React from "react";
-import { StyleSheet, ScrollView, View } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Spacing, Shape } from "@/constants/Colors";
-
-// Mock data para la pantalla de inicio
-const upcomingMatches = [
-  {
-    id: "1",
-    date: "2025-04-12T18:00:00",
-    location: "Cancha El Campín",
-    spotsLeft: 3,
-    type: "5v5",
-  },
-  {
-    id: "2",
-    date: "2025-04-15T20:00:00",
-    location: "Cancha La Bombonera",
-    spotsLeft: 1,
-    type: "7v7",
-  },
-];
-
-const nearbyFields = [
-  {
-    id: "1",
-    name: "El Campín",
-    distance: "1.5 km",
-    rating: 4.7,
-    price: "$60.000",
-  },
-  {
-    id: "2",
-    name: "La Bombonera",
-    distance: "2.3 km",
-    rating: 4.5,
-    price: "$55.000",
-  },
-];
+import { FieldCard } from "@/components/field/FieldCard";
+import { MatchCard } from "@/components/match/MatchCard";
+import { useAuth } from "@/hooks/useAuth";
+import { useFields } from "@/hooks/useFields";
+import { useMatches } from "@/hooks/useMatches";
+import { useRatings } from "@/hooks/useRatings";
+import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const { user, profile, requireAuth } = useAuth();
+  const { fields, fetchFields, getUserLocation } = useFields();
+  const { myMatches, myCreatedMatches, fetchMatches } = useMatches();
+  const { pendingRatings, fetchPendingRatings } = useRatings();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Verificar autenticación y cargar datos iniciales
+  useEffect(() => {
+    requireAuth();
+    if (user) {
+      loadInitialData();
+    }
+  }, [user?.uid]);
+
+  // Actualizar cuando la pantalla obtiene foco
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        // No recargar datos completos para evitar parpadeo
+        // Actualizar solo lo necesario
+        silentRefresh();
+      }
+    }, [user?.uid])
+  );
+
+  // Cargar datos iniciales
+  const loadInitialData = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      // Cargar ubicación del usuario
+      await getUserLocation();
+
+      // Cargar canchas cercanas
+      await fetchFields(true);
+
+      // Cargar partidos del usuario
+      await fetchMatches(user.uid, true);
+
+      // Cargar calificaciones pendientes
+      // Corregido: Pasando el ID del usuario
+      await fetchPendingRatings(user.uid);
+    } catch (error) {
+      console.error("Error al cargar datos iniciales:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Actualizar datos sin mostrar indicador de carga
+  const silentRefresh = async () => {
+    if (!user) return;
+
+    try {
+      await Promise.all([
+        fetchMatches(user.uid, true),
+        // Corregido: Pasando el ID del usuario
+        fetchPendingRatings(user.uid),
+      ]);
+    } catch (error) {
+      console.error("Error al actualizar datos:", error);
+    }
+  };
+
+  // Manejar refresh manual
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadInitialData();
+    setRefreshing(false);
+  };
+
+  // Obtener partidos próximos (combinados creados y unidos)
+  const getUpcomingMatches = () => {
+    const now = new Date();
+    const allMatches = [...myCreatedMatches, ...myMatches];
+
+    // Eliminar duplicados
+    const uniqueMatches = allMatches.filter(
+      (match, index, self) => index === self.findIndex((m) => m.id === match.id)
+    );
+
+    // Filtrar solo partidos futuros
+    return uniqueMatches
+      .filter((match) => match.date.toDate() > now)
+      .sort((a, b) => a.date.toDate().getTime() - b.date.toDate().getTime())
+      .slice(0, 3); // Mostrar solo los 3 próximos
+  };
+
+  // Obtener canchas cercanas
+  const getNearbyFields = () => {
+    // Ordenar por distancia y tomar las 2 primeras
+    return [...fields]
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
+      .slice(0, 2);
+  };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
+        <ThemedText style={styles.loadingText}>Cargando...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  // Datos para mostrar
+  const upcomingMatches = getUpcomingMatches();
+  const nearbyFields = getNearbyFields();
+
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -55,19 +147,52 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <SafeAreaView edges={["top"]}>
           <View style={styles.header}>
             <ThemedText type="title">GoFutbol</ThemedText>
             <ThemedText type="body" secondary>
-              Bienvenido de vuelta
+              Bienvenido {profile?.displayName?.split(" ")[0] || ""}
             </ThemedText>
           </View>
+
+          {/* Calificaciones pendientes */}
+          {pendingRatings.length > 0 && (
+            <View style={styles.pendingRatings}>
+              <Card onPress={() => router.push("/ratings/pending" as any)}>
+                <View style={styles.pendingRatingsContent}>
+                  <View>
+                    <ThemedText type="body" weight="semiBold">
+                      Tienes {pendingRatings.length}{" "}
+                      {pendingRatings.length === 1 ? "partido" : "partidos"} por
+                      calificar
+                    </ThemedText>
+                    <ThemedText type="caption" secondary>
+                      Califica a tus compañeros de juego
+                    </ThemedText>
+                  </View>
+                  <Button
+                    title="Calificar"
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                  />
+                </View>
+              </Card>
+            </View>
+          )}
 
           {/* Sección de acciones rápidas */}
           <View style={styles.actionsSection}>
             <View style={styles.actionsRow}>
-              <Card style={styles.actionCard} onPress={() => {}} shadow="s">
+              <Card
+                style={styles.actionCard}
+                onPress={() => router.push("/match/create" as any)}
+                shadow="s"
+              >
                 <IconSymbol name="soccer.ball" size={24} color="#1DB954" />
                 <ThemedText
                   type="body"
@@ -78,7 +203,11 @@ export default function HomeScreen() {
                 </ThemedText>
               </Card>
 
-              <Card style={styles.actionCard} onPress={() => {}} shadow="s">
+              <Card
+                style={styles.actionCard}
+                onPress={() => router.push("/(tabs)/explore")}
+                shadow="s"
+              >
                 <IconSymbol name="paperplane.fill" size={24} color="#1DB954" />
                 <ThemedText
                   type="body"
@@ -89,14 +218,18 @@ export default function HomeScreen() {
                 </ThemedText>
               </Card>
 
-              <Card style={styles.actionCard} onPress={() => {}} shadow="s">
+              <Card
+                style={styles.actionCard}
+                onPress={() => router.push("/(tabs)/matches")}
+                shadow="s"
+              >
                 <IconSymbol name="person.fill" size={24} color="#1DB954" />
                 <ThemedText
                   type="body"
                   weight="semiBold"
                   style={styles.actionText}
                 >
-                  Invitar Amigos
+                  Ver Partidos
                 </ThemedText>
               </Card>
             </View>
@@ -106,86 +239,72 @@ export default function HomeScreen() {
           <View style={styles.upcomingSection}>
             <View style={styles.sectionHeader}>
               <ThemedText type="subheading">Próximos Partidos</ThemedText>
-              <Button title="Ver todos" variant="ghost" size="small" />
+              <Button
+                title="Ver todos"
+                variant="ghost"
+                size="small"
+                onPress={() => router.push("/(tabs)/matches")}
+              />
             </View>
 
-            {upcomingMatches.map((match) => {
-              const matchDate = new Date(match.date);
-              const formattedDate = matchDate.toLocaleDateString("es-ES", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              });
-              const formattedTime = matchDate.toLocaleTimeString("es-ES", {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              return (
-                <Card
-                  key={match.id}
-                  style={styles.matchCard}
-                  onPress={() => {}}
-                >
-                  <View style={styles.matchCardContent}>
-                    <View style={styles.matchInfo}>
-                      <ThemedText type="body" weight="semiBold">
-                        {formattedDate} • {formattedTime}
-                      </ThemedText>
-                      <ThemedText type="body" secondary>
-                        {match.location}
-                      </ThemedText>
-                      <View style={styles.matchDetail}>
-                        <ThemedView style={styles.typeBadge}>
-                          <ThemedText style={styles.typeText}>
-                            {match.type}
-                          </ThemedText>
-                        </ThemedView>
-                        <ThemedText
-                          type="caption"
-                          secondary
-                          style={styles.spotsText}
-                        >
-                          {match.spotsLeft} cupos disponibles
-                        </ThemedText>
-                      </View>
-                    </View>
-                    <Button title="Unirse" size="small" color="primary" />
-                  </View>
-                </Card>
-              );
-            })}
+            {upcomingMatches.length > 0 ? (
+              upcomingMatches.map((match) => (
+                <MatchCard key={match.id} match={match} mode="compact" />
+              ))
+            ) : (
+              <ThemedView
+                style={styles.emptyListContainer}
+                variant="secondary"
+                rounded
+              >
+                <ThemedText type="body" secondary style={styles.emptyListText}>
+                  No tienes partidos próximos
+                </ThemedText>
+                <Button
+                  title="Crear Partido"
+                  size="small"
+                  onPress={() => router.push("/match/create" as any)}
+                  style={styles.emptyListButton}
+                />
+              </ThemedView>
+            )}
           </View>
 
           {/* Canchas cercanas */}
           <View style={styles.fieldsSection}>
             <View style={styles.sectionHeader}>
               <ThemedText type="subheading">Canchas Cercanas</ThemedText>
-              <Button title="Ver mapa" variant="ghost" size="small" />
+              <Button
+                title="Ver mapa"
+                variant="ghost"
+                size="small"
+                onPress={() => router.push("/(tabs)/explore")}
+              />
             </View>
 
-            {nearbyFields.map((field) => (
-              <Card key={field.id} style={styles.fieldCard} onPress={() => {}}>
-                <View style={styles.fieldCardContent}>
-                  <View style={styles.fieldInfo}>
-                    <ThemedText type="body" weight="semiBold">
-                      {field.name}
-                    </ThemedText>
-                    <ThemedText type="body" secondary>
-                      {field.distance} • {field.rating} ⭐
-                    </ThemedText>
-                    <ThemedText
-                      type="body"
-                      weight="semiBold"
-                      style={styles.priceText}
-                    >
-                      {field.price}
-                    </ThemedText>
-                  </View>
-                  <Button title="Reservar" size="small" color="primary" />
-                </View>
-              </Card>
-            ))}
+            {nearbyFields.length > 0 ? (
+              nearbyFields.map((field) => (
+                <FieldCard key={field.id} field={field} compact />
+              ))
+            ) : (
+              <ThemedView
+                style={styles.emptyListContainer}
+                variant="secondary"
+                rounded
+              >
+                <ThemedText type="body" secondary style={styles.emptyListText}>
+                  {isLoading
+                    ? "Buscando canchas cercanas..."
+                    : "No hay canchas cercanas disponibles"}
+                </ThemedText>
+                <Button
+                  title="Explorar Canchas"
+                  size="small"
+                  onPress={() => router.push("/(tabs)/explore")}
+                  style={styles.emptyListButton}
+                />
+              </ThemedView>
+            )}
           </View>
         </SafeAreaView>
       </ScrollView>
@@ -204,6 +323,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.l,
     paddingTop: Spacing.m,
     paddingBottom: Spacing.m,
+  },
+  pendingRatings: {
+    paddingHorizontal: Spacing.l,
+    marginBottom: Spacing.l,
+  },
+  pendingRatingsContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   actionsSection: {
     paddingHorizontal: Spacing.l,
@@ -236,50 +364,29 @@ const styles = StyleSheet.create({
   matchCard: {
     marginBottom: Spacing.m,
   },
-  matchCardContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  matchInfo: {
-    flex: 1,
-  },
-  matchDetail: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Spacing.xs,
-  },
-  typeBadge: {
-    backgroundColor: "#1DB95420",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-    borderRadius: Shape.radius.s,
-  },
-  typeText: {
-    color: "#1DB954",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  spotsText: {
-    marginLeft: Spacing.s,
-  },
   fieldsSection: {
     paddingHorizontal: Spacing.l,
     marginBottom: Spacing.xl,
   },
-  fieldCard: {
-    marginBottom: Spacing.m,
+  emptyListContainer: {
+    padding: Spacing.m,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: Spacing.s,
   },
-  fieldCardContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  emptyListText: {
+    textAlign: "center",
+    marginBottom: Spacing.s,
+  },
+  emptyListButton: {
+    minWidth: 150,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
-  fieldInfo: {
-    flex: 1,
-  },
-  priceText: {
-    marginTop: Spacing.xs,
-    color: "#1DB954",
+  loadingText: {
+    marginTop: Spacing.m,
   },
 });

@@ -1,50 +1,165 @@
-# Welcome to your Expo app 👋
+# GoFutbol - La red social del Fútbol Amateur
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+GoFutbol es una aplicación móvil que permite a los amantes del fútbol amateur organizar partidos como si fueran eventos sociales. Los usuarios pueden encontrar canchas, programar partidos, invitar amigos y ganar puntos de reputación por ser cumplidos.
 
-## Get started
+## Características Principales
 
-1. Install dependencies
+### Explorar y Alquilar Canchas
 
-   ```bash
-   npm install
-   ```
+- Mapa con canchas cercanas (por geolocalización)
+- Ver disponibilidad por franjas horarias
+- Precios, fotos, reseñas
+- Reservar desde la app
 
-2. Start the app
+### Programar Partidos
 
-   ```bash
-    npx expo start
-   ```
+- Crear partido (fecha, hora, tipo: 5, 6, 7 u 11)
+- Seleccionar cancha o dejarla por definir
+- Modo privado (solo por invitación) o público
+- Cupos disponibles y notificaciones
 
-In the output, you'll find options to open the app in a
+### Invitar y Armar Equipos
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Enviar invitaciones a amigos o jugadores con buen ranking
+- Autogestión de equipos (A/B)
+- Color de uniforme sugerido
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Calificar Comportamiento
 
-## Get a fresh project
+- Después del partido, los jugadores califican a los demás:
+  - ✅ Asistencia: llegó / no llegó
+  - 🕒 Puntualidad: a tiempo / tarde / se fue antes
+  - 🔥 Actitud: buena onda / conflictivo / colaborador
 
-When you're ready, run:
+### Ranking Futbolero
+
+- Porcentaje de asistencia
+- Promedio de puntualidad
+- Karma social (calificaciones de otros jugadores)
+
+### Perfil de Jugador
+
+- Posición preferida
+- Ranking de asistencia y compromiso
+- Partidos jugados
+
+## Tecnologías Utilizadas
+
+- React Native / Expo
+- Firebase (Authentication, Firestore, Storage)
+- Zustand para gestión de estado
+- TypeScript para un código más robusto
+- Expo Router para navegación
+- React Native Maps para mapas
+- Expo Location para geolocalización
+
+## Instalación y Ejecución
+
+### Requisitos Previos
+
+- Node.js (versión 20 o superior)
+- npm
+- Expo CLI
+
+### Pasos de Instalación
+
+1. Clonar el repositorio:
 
 ```bash
-npm run reset-project
+git clone https://github.com/tu-usuario/gofutbol.git
+cd gofutbol
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Instalar dependencias:
 
-## Learn more
+```bash
+npm install
+# o con yarn
+yarn install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Iniciar la aplicación:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm start
+# o con yarn
+yarn start
+```
 
-## Join the community
+4. Usar Expo Go en tu dispositivo o ejecutar en un emulador.
 
-Join our community of developers creating universal apps.
+## Configuración de Firebase
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Para utilizar todas las funcionalidades, es necesario configurar un proyecto en Firebase:
+
+1. Crear un proyecto en [Firebase Console](https://console.firebase.google.com/)
+2. Habilitar Authentication (Email/Password y Google)
+3. Configurar Firestore Database
+4. Configurar Storage
+5. Crear un archivo `config/firebase.ts` con tu configuración:
+
+```typescript
+// config/firebase.ts
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_MESSAGING_SENDER_ID",
+  appId: "TU_APP_ID",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+export { auth, db, storage };
+```
+
+## Estructura del Proyecto
+
+El proyecto sigue una estructura de carpetas clara y organizada:
+
+```
+/gofutbol
+├── /app                     # Directorio principal para las pantallas (expo-router)
+│   ├── /(tabs)              # Pantallas principales con navegación por tabs
+│   ├── /(auth)              # Pantallas de autenticación
+│   ├── /field               # Pantallas relacionadas con canchas
+│   ├── /match               # Pantallas relacionadas con partidos
+│   └── /ratings             # Pantallas relacionadas con calificaciones
+├── /assets                  # Recursos estáticos
+├── /components              # Componentes reutilizables
+├── /config                  # Configuraciones (Firebase, etc.)
+├── /constants               # Constantes de la aplicación
+├── /context                 # Contextos de React
+├── /hooks                   # Custom hooks
+├── /store                   # Tiendas de estado (Zustand)
+├── /types                   # Definiciones de tipos
+└── /utils                   # Utilidades y helpers
+```
+
+## Contribuir
+
+Las contribuciones son bienvenidas. Por favor, sigue estos pasos:
+
+1. Haz un fork del repositorio
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## Licencia
+
+Este proyecto está licenciado bajo MIT License - ver el archivo LICENSE.md para más detalles.
+
+## Contacto
+
+Si tienes preguntas o sugerencias, contacta a [tu-email@example.com].

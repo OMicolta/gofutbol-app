@@ -1,77 +1,31 @@
 // app/(tabs)/explore.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
-  ScrollView,
   View,
   TextInput,
   FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Card } from "@/components/ui/Card";
+import { FieldCard } from "@/components/field/FieldCard";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Spacing, Shape, Colors } from "@/constants/Colors";
+import { useFields } from "@/hooks/useFields";
+import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNotification } from "@/context/NotificationContext";
 
-// Mock data para la pantalla de exploración
-const fields = [
-  {
-    id: "1",
-    name: "El Campín",
-    address: "Calle 57 #13-93",
-    zone: "Chapinero",
-    rating: 4.7,
-    price: "$60.000/h",
-    type: "5v5, 7v7",
-    distance: "1.5 km",
-    facilities: ["⚽ Balones", "🅿️ Parqueadero", "🚿 Duchas"],
-    available: true,
-  },
-  {
-    id: "2",
-    name: "La Bombonera",
-    address: "Carrera 15 #82-30",
-    zone: "Zona T",
-    rating: 4.5,
-    price: "$55.000/h",
-    type: "5v5",
-    distance: "2.3 km",
-    facilities: ["🧢 Petos", "🅿️ Parqueadero"],
-    available: true,
-  },
-  {
-    id: "3",
-    name: "La Cancha",
-    address: "Av. Calle 26 #62-47",
-    zone: "Salitre",
-    rating: 4.8,
-    price: "$70.000/h",
-    type: "5v5, 7v7, 11v11",
-    distance: "3.1 km",
-    facilities: ["⚽ Balones", "🅿️ Parqueadero", "🚿 Duchas", "🥤 Cafetería"],
-    available: false,
-  },
-  {
-    id: "4",
-    name: "Gol Center",
-    address: "Calle 80 #72-35",
-    zone: "Engativá",
-    rating: 4.3,
-    price: "$50.000/h",
-    type: "5v5",
-    distance: "5.2 km",
-    facilities: ["⚽ Balones", "🧢 Petos"],
-    available: true,
-  },
-];
-
-const filters = [
+// Filtros para mostrar
+const filterOptions = [
   { id: "closest", name: "Más cercanas" },
   { id: "5v5", name: "5 vs 5" },
   { id: "7v7", name: "7 vs 7" },
@@ -83,15 +37,138 @@ const filters = [
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(["closest"]);
-  const [searchText, setSearchText] = useState("");
+  const {
+    fields,
+    filteredFields,
+    fetchFields,
+    getUserLocation,
+    setFilters,
+    resetFilters,
+    isLoading,
+    error,
+  } = useFields();
+  const { showNotification } = useNotification();
 
-  const toggleFilter = (filterId: string) => {
-    if (selectedFilters.includes(filterId)) {
-      setSelectedFilters(selectedFilters.filter((id) => id !== filterId));
-    } else {
-      setSelectedFilters([...selectedFilters, filterId]);
+  // Estados locales
+  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>(["closest"]);
+  const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+
+  // Cargar canchas al montar componente
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Actualizar cuando la pantalla obtiene foco
+  useFocusEffect(
+    useCallback(() => {
+      // No recargar datos completos para evitar parpadeo
+      // Solo actualizar ubicación si es necesario
+      if (isLocationEnabled) {
+        updateLocation();
+      }
+    }, [isLocationEnabled])
+  );
+
+  // Cargar datos iniciales
+  const loadData = async () => {
+    try {
+      // Intentar obtener ubicación
+      const location = await getUserLocation();
+      setIsLocationEnabled(location !== null);
+
+      // Cargar canchas
+      await fetchFields(true);
+    } catch (error) {
+      console.error("Error al cargar datos:", error);
+      showNotification("Error al cargar datos. Intenta de nuevo.", "error");
     }
+  };
+
+  // Actualizar ubicación del usuario
+  const updateLocation = async () => {
+    try {
+      await getUserLocation();
+    } catch (error) {
+      console.error("Error al actualizar ubicación:", error);
+    }
+  };
+
+  // Manejar búsqueda
+  const handleSearch = () => {
+    setFilters({ query: searchQuery });
+  };
+
+  // Limpiar búsqueda
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilters({ query: "" });
+  };
+
+  // Manejar filtros
+  const toggleFilter = (filterId: string) => {
+    let newFilters: string[];
+
+    if (selectedFilters.includes(filterId)) {
+      newFilters = selectedFilters.filter((id) => id !== filterId);
+    } else {
+      newFilters = [...selectedFilters, filterId];
+    }
+
+    setSelectedFilters(newFilters);
+
+    // Aplicar filtros a la tienda
+    applyFilters(newFilters);
+  };
+
+  // Aplicar filtros seleccionados
+  const applyFilters = (selectedFilters: string[]) => {
+    // Reiniciar filtros
+    resetFilters();
+
+    // Crear objeto de filtros
+    const filterObj: any = {};
+
+    // Aplicar filtro de orden
+    if (selectedFilters.includes("closest")) {
+      filterObj.sortBy = "distance";
+    } else {
+      filterObj.sortBy = "rating";
+    }
+
+    // Filtrar por tipo
+    const typeFilters = selectedFilters.filter((f) =>
+      ["5v5", "7v7", "11v11"].includes(f)
+    );
+    if (typeFilters.length > 0) {
+      filterObj.type = typeFilters;
+    }
+
+    // Filtrar por instalaciones
+    const facilityFilters = [];
+    if (selectedFilters.includes("parking"))
+      facilityFilters.push("Parqueadero");
+    if (selectedFilters.includes("showers")) facilityFilters.push("Duchas");
+
+    if (facilityFilters.length > 0) {
+      filterObj.facilities = facilityFilters;
+    }
+
+    // Filtrar por disponibilidad
+    if (selectedFilters.includes("available")) {
+      filterObj.available = true;
+    }
+
+    // Aplicar todos los filtros
+    setFilters(filterObj);
+  };
+
+  // Manejar refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
   };
 
   return (
@@ -118,135 +195,107 @@ export default function ExploreScreen() {
               style={[styles.searchInput, { color: Colors[colorScheme].text }]}
               placeholder="Buscar canchas por nombre o zona..."
               placeholderTextColor={Colors[colorScheme].textSecondary}
-              value={searchText}
-              onChangeText={setSearchText}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
             />
-            {searchText.length > 0 && (
-              <Button
-                title="✕"
-                variant="ghost"
-                size="small"
-                onPress={() => setSearchText("")}
-              />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={styles.clearButton}
+              >
+                <ThemedText style={styles.clearText}>✕</ThemedText>
+              </TouchableOpacity>
             )}
           </ThemedView>
         </View>
 
         {/* Filtros */}
         <View style={styles.filtersContainer}>
-          <ScrollView
+          <FlatList
             horizontal
+            data={filterOptions}
+            keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filtersScroll}
-          >
-            {filters.map((filter) => (
-              <ThemedView
-                key={filter.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => toggleFilter(item.id)}
                 style={[
                   styles.filterChip,
-                  selectedFilters.includes(filter.id) &&
+                  selectedFilters.includes(item.id) &&
                     styles.selectedFilterChip,
                 ]}
-                variant={
-                  selectedFilters.includes(filter.id) ? "default" : "secondary"
-                }
-                rounded
               >
-                <Button
-                  title={filter.name}
-                  variant="ghost"
-                  size="small"
-                  color={
-                    selectedFilters.includes(filter.id) ? "primary" : undefined
-                  }
-                  onPress={() => toggleFilter(filter.id)}
-                />
-              </ThemedView>
-            ))}
-          </ScrollView>
+                <ThemedText
+                  style={[
+                    styles.filterText,
+                    selectedFilters.includes(item.id) &&
+                      styles.selectedFilterText,
+                  ]}
+                >
+                  {item.name}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          />
         </View>
 
         {/* Lista de canchas */}
-        <FlatList
-          data={fields}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.fieldsList}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <Card style={styles.fieldCard} onPress={() => {}} shadow="m">
-              <View style={styles.fieldHeader}>
-                <View>
-                  <ThemedText type="heading">{item.name}</ThemedText>
-                  <ThemedText type="body" secondary>
-                    {item.address}
-                  </ThemedText>
-                  <View style={styles.fieldMeta}>
-                    <ThemedText type="caption" secondary>
-                      {item.zone} • {item.distance}
-                    </ThemedText>
-                    <ThemedText type="caption" secondary>
-                      ⭐ {item.rating}
-                    </ThemedText>
-                  </View>
-                </View>
-                {item.available ? (
-                  <ThemedView style={styles.availableBadge} rounded="s">
-                    <ThemedText style={styles.availableText}>
-                      Disponible
-                    </ThemedText>
-                  </ThemedView>
-                ) : (
-                  <ThemedView style={styles.unavailableBadge} rounded="s">
-                    <ThemedText style={styles.unavailableText}>
-                      No disponible
-                    </ThemedText>
-                  </ThemedView>
-                )}
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.fieldDetails}>
-                <View style={styles.detailColumn}>
-                  <ThemedText type="caption" secondary>
-                    Tipo
-                  </ThemedText>
-                  <ThemedText type="body">{item.type}</ThemedText>
-                </View>
-                <View style={styles.detailColumn}>
-                  <ThemedText type="caption" secondary>
-                    Precio
-                  </ThemedText>
-                  <ThemedText
-                    type="body"
-                    weight="semiBold"
-                    style={styles.priceText}
-                  >
-                    {item.price}
-                  </ThemedText>
-                </View>
+        {isLoading && fields.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={Colors[colorScheme].primary}
+            />
+            <ThemedText style={styles.loadingText}>
+              Cargando canchas...
+            </ThemedText>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <ThemedText type="subtitle" style={styles.errorTitle}>
+              Error al cargar canchas
+            </ThemedText>
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <Button
+              title="Reintentar"
+              onPress={loadData}
+              style={styles.retryButton}
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredFields}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.fieldsList}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <ThemedText type="subtitle" style={styles.emptyTitle}>
+                  No se encontraron canchas
+                </ThemedText>
+                <ThemedText style={styles.emptyText}>
+                  Intenta ajustar los filtros o la búsqueda
+                </ThemedText>
                 <Button
-                  title="Reservar"
-                  size="small"
-                  disabled={!item.available}
+                  title="Limpiar filtros"
+                  onPress={() => {
+                    setSelectedFilters(["closest"]);
+                    setSearchQuery("");
+                    resetFilters();
+                  }}
+                  style={styles.clearFiltersButton}
                 />
               </View>
-
-              <View style={styles.facilitiesContainer}>
-                {item.facilities.map((facility, index) => (
-                  <ThemedText
-                    key={index}
-                    type="caption"
-                    secondary
-                    style={styles.facilityItem}
-                  >
-                    {facility}
-                  </ThemedText>
-                ))}
-              </View>
-            </Card>
-          )}
-        />
+            }
+            renderItem={({ item }) => <FieldCard field={item} />}
+          />
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -280,82 +329,82 @@ const styles = StyleSheet.create({
     fontSize: 16,
     height: 40,
   },
+  clearButton: {
+    padding: Spacing.xs,
+  },
+  clearText: {
+    fontSize: 16,
+    color: "#9E9E9E",
+  },
   filtersContainer: {
     marginBottom: Spacing.m,
   },
   filtersScroll: {
     paddingHorizontal: Spacing.l,
+    paddingVertical: Spacing.xs,
     gap: Spacing.s,
   },
   filterChip: {
-    borderRadius: Shape.radius.round,
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.s,
+    borderRadius: 20,
   },
   selectedFilterChip: {
-    backgroundColor: "#1DB95420",
+    backgroundColor: Colors.light.primary + "20",
+  },
+  filterText: {
+    fontSize: 14,
+  },
+  selectedFilterText: {
+    color: Colors.light.primary,
+    fontWeight: "600",
   },
   fieldsList: {
     paddingHorizontal: Spacing.l,
-    paddingBottom: 120, // Extra padding at bottom for tab bar
+    paddingBottom: 100, // Extra padding for tab bar
   },
-  fieldCard: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.l,
+  },
+  loadingText: {
+    marginTop: Spacing.m,
+    textAlign: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.l,
+  },
+  errorTitle: {
+    marginBottom: Spacing.m,
+  },
+  errorText: {
+    textAlign: "center",
     marginBottom: Spacing.l,
   },
-  fieldHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  retryButton: {
+    minWidth: 120,
   },
-  fieldMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: Spacing.xs,
-  },
-  availableBadge: {
-    backgroundColor: "#1DB95420",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-  },
-  availableText: {
-    color: "#1DB954",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  unavailableBadge: {
-    backgroundColor: "#F4433620",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-  },
-  unavailableText: {
-    color: "#F44336",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E0E0E0",
-    marginVertical: Spacing.m,
-  },
-  fieldDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  detailColumn: {
+  emptyContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.l,
+    marginTop: Spacing.xl,
   },
-  priceText: {
-    color: "#1DB954",
+  emptyTitle: {
+    marginBottom: Spacing.s,
   },
-  facilitiesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: Spacing.m,
-    gap: Spacing.s,
+  emptyText: {
+    textAlign: "center",
+    marginBottom: Spacing.l,
   },
-  facilityItem: {
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-    backgroundColor: "#F5F5F5",
-    borderRadius: Shape.radius.s,
+  clearFiltersButton: {
+    minWidth: 150,
   },
 });

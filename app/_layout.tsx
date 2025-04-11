@@ -12,7 +12,9 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
 import ThemeProvider from "@/components/ThemeProvider";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -26,9 +28,15 @@ function RootLayoutNav() {
     <NavigationThemeProvider
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="field/[id]" />
+        <Stack.Screen name="field/book" />
+        <Stack.Screen name="match/[id]" />
+        <Stack.Screen name="match/create" />
+        <Stack.Screen name="match/edit/[id]" />
+        <Stack.Screen name="ratings/pending" />
       </Stack>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </NavigationThemeProvider>
@@ -53,7 +61,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        <RootLayoutNav />
+        <NotificationProvider>
+          <RootLayoutNav />
+        </NotificationProvider>
       </SafeAreaProvider>
     </ThemeProvider>
   );
