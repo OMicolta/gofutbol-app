@@ -1,4 +1,5 @@
-// This is a shim for web and Android where the tab bar is generally opaque.
+// components\ui\TabBarBackground.tsx
+
 export default undefined;
 
 export function useBottomTabOverflow() {
