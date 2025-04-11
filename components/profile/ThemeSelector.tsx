@@ -1,87 +1,69 @@
 // components/profile/ThemeSelector.tsx
-import React from "react";
-import { StyleSheet, View, TouchableOpacity, Platform } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol, IconSymbolName } from "@/components/ui/IconSymbol";
-import { ThemeType } from "@/store/themeStore";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useTheme } from "@/components/ThemeProvider";
+import { ThemeModal } from "@/components/profile/ThemeModal";
 
 export function ThemeSelector() {
   const colorScheme = useColorScheme();
-  const { themePreference, setThemePreference } = useTheme();
+  const { themePreference } = useTheme();
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const themeOptions: {
-    value: ThemeType;
-    label: string;
-    icon: IconSymbolName;
-  }[] = [
-    { value: "light", label: "Claro", icon: "house.fill" },
-    { value: "dark", label: "Oscuro", icon: "house.fill" },
-    { value: "system", label: "Sistema", icon: "gear" },
-  ];
+  // Obtener el nombre del tema actual para mostrar
+  const getThemeName = () => {
+    switch (themePreference) {
+      case "light":
+        return "Claro";
+      case "dark":
+        return "Oscuro";
+      case "system":
+        return "Sistema";
+      default:
+        return "Sistema";
+    }
+  };
 
   return (
-    <ThemedView style={styles.container} variant="card" rounded>
-      <ThemedText type="subtitle">Tema de la Aplicación</ThemedText>
+    <>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => setModalVisible(true)}
+      >
+        <ThemedView style={styles.container} variant="card" rounded>
+          <ThemedText type="subtitle">Tema de la Aplicación</ThemedText>
 
-      <View style={styles.optionsContainer}>
-        {themeOptions.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.optionButton,
-              themePreference === option.value && styles.selectedOption,
-              {
-                backgroundColor:
-                  themePreference === option.value
-                    ? Colors[colorScheme].tint + "20"
-                    : "transparent",
-              },
-            ]}
-            onPress={() => setThemePreference(option.value)}
+          <ThemedView
+            style={styles.selectedThemeContainer}
+            variant="secondary"
+            rounded
           >
+            <ThemedText>{getThemeName()}</ThemedText>
             <IconSymbol
-              name={option.icon}
-              size={24}
-              color={
-                themePreference === option.value
-                  ? Colors[colorScheme].tint
-                  : Colors[colorScheme].text
-              }
+              name="chevron.right"
+              size={20}
+              color={Colors[colorScheme].icon}
             />
-            <ThemedText
-              style={[
-                styles.optionText,
-                themePreference === option.value && {
-                  color: Colors[colorScheme].tint,
-                },
-              ]}
-            >
-              {option.label}
-            </ThemedText>
-            {themePreference === option.value && (
-              <View style={styles.checkmarkContainer}>
-                <IconSymbol
-                  name="chevron.right"
-                  size={20}
-                  color={Colors[colorScheme].tint}
-                />
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
+          </ThemedView>
 
-      <ThemedText style={styles.note} secondary>
-        {themePreference === "system"
-          ? "Usando el tema del sistema: " +
-            (colorScheme === "dark" ? "Oscuro" : "Claro")
-          : ""}
-      </ThemedText>
-    </ThemedView>
+          <ThemedText style={styles.note} secondary>
+            {themePreference === "system"
+              ? "Usando el tema del sistema: " +
+                (colorScheme === "dark" ? "Oscuro" : "Claro")
+              : ""}
+          </ThemedText>
+        </ThemedView>
+      </TouchableOpacity>
+
+      <ThemeModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+      />
+    </>
   );
 }
 
@@ -90,27 +72,14 @@ const styles = StyleSheet.create({
     padding: Spacing.m,
     marginVertical: Spacing.s,
   },
-  optionsContainer: {
-    marginTop: Spacing.m,
-  },
-  optionButton: {
+  selectedThemeContainer: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: Spacing.m,
+    marginTop: Spacing.m,
     paddingHorizontal: Spacing.m,
-    borderRadius: Shape.radius.s,
-    marginBottom: Spacing.s,
-  },
-  selectedOption: {
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  optionText: {
-    marginLeft: Spacing.m,
-    fontSize: 16,
-  },
-  checkmarkContainer: {
-    marginLeft: "auto",
+    paddingVertical: Spacing.s,
+    borderRadius: Shape.radius.m,
   },
   note: {
     fontSize: 12,
