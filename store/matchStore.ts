@@ -351,6 +351,7 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
       // Aplicar filtros actuales a los nuevos partidos
       get().applyFilters();
     } catch (error) {
+      console.log(error);
       set({
         isLoading: false,
         error: (error as Error).message,

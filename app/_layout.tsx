@@ -81,6 +81,7 @@ function AuthenticatedLayout() {
         <Stack.Screen name="match/create" />
         <Stack.Screen name="match/edit/[id]" />
         <Stack.Screen name="ratings/pending" />
+        <Stack.Screen name="profile/edit" />
       </Stack>
       <StatusBar style="auto" />
     </>

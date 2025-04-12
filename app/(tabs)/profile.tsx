@@ -147,8 +147,7 @@ export default function ProfileScreen() {
 
   // Manejar edición de perfil
   const handleEditProfile = () => {
-    // Esta funcionalidad se implementará en una versión futura
-    showNotification("Funcionalidad en desarrollo", "info");
+    router.push("/profile/edit" as any);
   };
 
   // Navegar a calificaciones pendientes

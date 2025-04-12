@@ -1,6 +1,6 @@
 // hooks/useAuth.ts
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, UserProfile } from "@/store/authStore";
 import { router } from "expo-router";
 import { useNotification } from "@/context/NotificationContext";
 
@@ -102,6 +102,37 @@ export function useAuth() {
     }
   };
 
+  // Función segura para actualizar perfil con manejo de errores
+  const safeUpdateProfile = async (updatedProfile: Partial<UserProfile>) => {
+    try {
+      if (!authStore.user || !authStore.profile) {
+        showNotification(
+          "Debes iniciar sesión para actualizar tu perfil",
+          "error"
+        );
+        return false;
+      }
+
+      await authStore.updateUserProfile(updatedProfile);
+      showNotification("Perfil actualizado correctamente", "success");
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar perfil:", error);
+      showNotification(
+        `Error al actualizar perfil: ${(error as Error).message}`,
+        "error"
+      );
+      return false;
+    }
+  };
+
+  // Función para limpiar errores
+  const clearAuthError = () => {
+    if (authStore.clearError) {
+      authStore.clearError();
+    }
+  };
+
   return {
     ...authStore,
     isInitializing,
@@ -110,5 +141,7 @@ export function useAuth() {
     isUserAuthenticated,
     safeSignIn,
     safeSignUp,
+    safeUpdateProfile,
+    clearAuthError,
   };
 }

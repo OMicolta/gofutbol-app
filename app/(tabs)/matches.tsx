@@ -8,6 +8,9 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Linking,
+  Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
@@ -39,6 +42,8 @@ export default function MatchesScreen() {
     resetFilters,
     isLoading,
     error,
+    indexError,
+    retryLoadAfterIndexError,
   } = useMatches();
   const { showNotification } = useNotification();
 
@@ -50,7 +55,7 @@ export default function MatchesScreen() {
     requireAuth();
   }, []);
 
-  // Cargar partidos al montar componente
+  // Cargar partidos cuando la autenticación esté lista
   useEffect(() => {
     if (user) {
       loadData();
@@ -76,6 +81,45 @@ export default function MatchesScreen() {
     } catch (error) {
       console.error("Error al cargar partidos:", error);
       showNotification("Error al cargar partidos. Intenta de nuevo.", "error");
+    }
+  };
+
+  // Manejar el error de índice de Firebase
+  const handleIndexError = async (errorMessage: string | null) => {
+    if (!errorMessage) return;
+
+    // Intentar extraer la URL del índice del mensaje de error
+    const urlMatch = errorMessage.match(/(https?:\/\/[^\s]+)/);
+    if (urlMatch && urlMatch[0]) {
+      const indexUrl = urlMatch[0];
+
+      // Preguntar al usuario si desea crear el índice
+      if (Platform.OS === "web") {
+        // En web, podemos abrir directamente una nueva pestaña
+        window.open(indexUrl, "_blank");
+      } else {
+        // En móvil, preguntamos primero
+        Alert.alert(
+          "Se requiere configuración adicional",
+          "Esta consulta requiere la creación de un índice en Firebase. ¿Deseas abrir el enlace para crearlo?",
+          [
+            {
+              text: "Cancelar",
+              style: "cancel",
+            },
+            {
+              text: "Abrir enlace",
+              onPress: async () => {
+                try {
+                  await Linking.openURL(indexUrl);
+                } catch (err) {
+                  showNotification("No se pudo abrir el enlace", "error");
+                }
+              },
+            },
+          ]
+        );
+      }
     }
   };
 
@@ -120,6 +164,40 @@ export default function MatchesScreen() {
     } else {
       return filteredMatches;
     }
+  };
+
+  // Contenido específico para error de índice de Firebase
+  const renderIndexErrorContent = () => {
+    return (
+      <View style={styles.errorContainer}>
+        <IconSymbol name="xmark" size={48} color={Colors[colorScheme].danger} />
+        <ThemedText type="subtitle" style={styles.errorTitle}>
+          Error al cargar partidos
+        </ThemedText>
+        <ThemedText style={styles.errorText}>
+          Esta consulta requiere la creación de un índice en Firebase.
+        </ThemedText>
+        <ThemedText style={[styles.errorText, styles.indexNote]}>
+          Para solucionarlo, accede a la consola de Firebase y crea el índice
+          requerido.
+        </ThemedText>
+        {error && (
+          <TouchableOpacity
+            onPress={() => handleIndexError(error)}
+            style={styles.indexLink}
+          >
+            <ThemedText style={styles.indexLinkText}>
+              Crear índice en Firebase
+            </ThemedText>
+          </TouchableOpacity>
+        )}
+        <Button
+          title="Intentar de nuevo"
+          onPress={retryLoadAfterIndexError}
+          style={styles.retryButton}
+        />
+      </View>
+    );
   };
 
   return (
@@ -191,6 +269,8 @@ export default function MatchesScreen() {
               Cargando partidos...
             </ThemedText>
           </View>
+        ) : indexError ? (
+          renderIndexErrorContent()
         ) : error ? (
           <View style={styles.errorContainer}>
             <ThemedText type="subtitle" style={styles.errorTitle}>
@@ -304,13 +384,27 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     marginBottom: Spacing.m,
+    marginTop: Spacing.m,
   },
   errorText: {
     textAlign: "center",
-    marginBottom: Spacing.l,
+    marginBottom: Spacing.m,
+  },
+  indexNote: {
+    fontStyle: "italic",
+    maxWidth: "80%",
+  },
+  indexLink: {
+    padding: Spacing.m,
+    marginVertical: Spacing.m,
+  },
+  indexLinkText: {
+    color: Colors.light.primary,
+    textDecorationLine: "underline",
+    fontWeight: "600",
   },
   retryButton: {
-    minWidth: 120,
+    minWidth: 150,
   },
   emptyContainer: {
     alignItems: "center",
