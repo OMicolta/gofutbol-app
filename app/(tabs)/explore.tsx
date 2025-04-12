@@ -275,7 +275,7 @@ export default function ExploreScreen() {
           </ThemedView>
         </View>
 
-        {/* Filtros */}
+        {/* Filtros - MEJORADOS PARA MODO OSCURO */}
         <View style={styles.filtersContainer}>
           <FlatList
             horizontal
@@ -288,15 +288,24 @@ export default function ExploreScreen() {
                 onPress={() => toggleFilter(item.id)}
                 style={[
                   styles.filterChip,
-                  selectedFilters.includes(item.id) &&
-                    styles.selectedFilterChip,
+                  {
+                    // Usar colores específicos según el tema
+                    backgroundColor: selectedFilters.includes(item.id)
+                      ? Colors[colorScheme].primary + "20"
+                      : Colors[colorScheme].card,
+                    borderColor: selectedFilters.includes(item.id)
+                      ? Colors[colorScheme].primary
+                      : Colors[colorScheme].border,
+                  },
                 ]}
               >
                 <ThemedText
                   style={[
-                    styles.filterText,
-                    selectedFilters.includes(item.id) &&
-                      styles.selectedFilterText,
+                    {
+                      color: selectedFilters.includes(item.id)
+                        ? Colors[colorScheme].primary
+                        : Colors[colorScheme].text,
+                    },
                   ]}
                 >
                   {item.name}
@@ -409,20 +418,10 @@ const styles = StyleSheet.create({
     gap: Spacing.s,
   },
   filterChip: {
-    backgroundColor: "#F5F5F5",
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
     borderRadius: 20,
-  },
-  selectedFilterChip: {
-    backgroundColor: Colors.light.primary + "20",
-  },
-  filterText: {
-    fontSize: 14,
-  },
-  selectedFilterText: {
-    color: Colors.light.primary,
-    fontWeight: "600",
+    borderWidth: 1,
   },
   fieldsList: {
     paddingHorizontal: Spacing.l,

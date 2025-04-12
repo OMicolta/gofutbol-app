@@ -80,6 +80,7 @@ export function Button({
   };
 
   // Determine styles based on variant, color, and size
+  // MEJORADO PARA MODO OSCURO
   const getBackgroundColor = () => {
     if (disabled) return theme.disabled;
     if (variant === "filled") return theme[color];
@@ -94,7 +95,12 @@ export function Button({
 
   const getTextColor = () => {
     if (disabled) return theme.textDisabled;
-    if (variant === "filled") return "white";
+    if (variant === "filled")
+      return variant === "filled" &&
+        color === "primary" &&
+        colorScheme === "dark"
+        ? "#000000"
+        : "white";
     return theme[color];
   };
 

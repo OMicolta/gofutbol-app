@@ -82,11 +82,18 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
           <ThemedText type="subheading">{field.name}</ThemedText>
           {field.distance !== undefined && (
             <ThemedView
-              style={styles.distanceBadge}
+              style={[
+                styles.distanceBadge,
+                { backgroundColor: Colors[colorScheme].primary + "20" },
+              ]}
               rounded="s"
-              variant="secondary"
             >
-              <ThemedText style={styles.distanceText}>
+              <ThemedText
+                style={[
+                  styles.distanceText,
+                  { color: Colors[colorScheme].primary },
+                ]}
+              >
                 {field.distance} km
               </ThemedText>
             </ThemedView>
@@ -111,7 +118,11 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
             <ThemedText type="caption" secondary>
               Tipo: {field.types.join(", ")}
             </ThemedText>
-            <ThemedText type="body" weight="semiBold" style={styles.priceText}>
+            <ThemedText
+              type="body"
+              weight="semiBold"
+              style={[styles.priceText, { color: Colors[colorScheme].primary }]}
+            >
               {formattedPrice}
             </ThemedText>
           </View>
@@ -122,9 +133,15 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
             {field.facilities.slice(0, 3).map((facility, index) => (
               <ThemedView
                 key={index}
-                style={styles.facilityChip}
+                style={[
+                  styles.facilityChip,
+                  {
+                    backgroundColor: Colors[colorScheme].card,
+                    borderColor: Colors[colorScheme].border,
+                    borderWidth: 1,
+                  },
+                ]}
                 rounded="s"
-                variant="secondary"
               >
                 <ThemedText type="caption">{facility}</ThemedText>
               </ThemedView>
@@ -166,12 +183,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   distanceBadge: {
-    backgroundColor: Colors.light.primary + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
   distanceText: {
-    color: Colors.light.primary,
     fontSize: Typography.fontSizes.s,
     fontWeight: Typography.fontWeights.medium,
   },
@@ -184,7 +199,7 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xs / 2,
   },
   priceText: {
-    color: Colors.light.primary,
+    // El color ahora se aplica dinámicamente según el tema
   },
   facilitiesContainer: {
     flexDirection: "row",
@@ -194,7 +209,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   facilityChip: {
-    backgroundColor: Colors.light.borderLight,
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },

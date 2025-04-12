@@ -5,10 +5,10 @@ import {
   StyleSheet,
   View,
   TextInput,
-  ScrollView,
   TouchableOpacity,
-  Platform,
+  ScrollView,
   KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -239,6 +239,12 @@ export default function CreateMatchScreen() {
               <TouchableOpacity
                 style={[
                   styles.dateTimePicker,
+                  {
+                    backgroundColor: Colors[colorScheme].card,
+                    borderColor: formErrors.date
+                      ? Colors[colorScheme].danger
+                      : Colors[colorScheme].border,
+                  },
                   formErrors.date ? styles.inputError : null,
                 ]}
                 onPress={() => setShowDatePicker(true)}
@@ -255,13 +261,22 @@ export default function CreateMatchScreen() {
               </TouchableOpacity>
 
               {formErrors.date && (
-                <ThemedText type="caption" style={styles.errorText}>
+                <ThemedText
+                  type="caption"
+                  style={[
+                    styles.errorText,
+                    { color: Colors[colorScheme].danger },
+                  ]}
+                >
                   {formErrors.date}
                 </ThemedText>
               )}
 
               <TouchableOpacity
-                style={styles.dateTimePicker}
+                style={[
+                  styles.dateTimePicker,
+                  { backgroundColor: Colors[colorScheme].card },
+                ]}
                 onPress={() => setShowTimePicker(true)}
               >
                 <View style={styles.inputWithIcon}>
@@ -308,12 +323,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchType === "5v5" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchType === "5v5"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchType === "5v5"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchType("5v5")}
                 >
                   <ThemedText
-                    style={matchType === "5v5" ? styles.optionTextActive : null}
+                    style={{
+                      color:
+                        matchType === "5v5"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     5 vs 5
                   </ThemedText>
@@ -322,12 +351,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchType === "6v6" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchType === "6v6"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchType === "6v6"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchType("6v6")}
                 >
                   <ThemedText
-                    style={matchType === "6v6" ? styles.optionTextActive : null}
+                    style={{
+                      color:
+                        matchType === "6v6"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     6 vs 6
                   </ThemedText>
@@ -336,12 +379,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchType === "7v7" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchType === "7v7"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchType === "7v7"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchType("7v7")}
                 >
                   <ThemedText
-                    style={matchType === "7v7" ? styles.optionTextActive : null}
+                    style={{
+                      color:
+                        matchType === "7v7"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     7 vs 7
                   </ThemedText>
@@ -350,14 +407,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchType === "11v11" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchType === "11v11"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchType === "11v11"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchType("11v11")}
                 >
                   <ThemedText
-                    style={
-                      matchType === "11v11" ? styles.optionTextActive : null
-                    }
+                    style={{
+                      color:
+                        matchType === "11v11"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     11 vs 11
                   </ThemedText>
@@ -375,14 +444,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchLevel === "beginner" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchLevel === "beginner"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchLevel === "beginner"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchLevel("beginner")}
                 >
                   <ThemedText
-                    style={
-                      matchLevel === "beginner" ? styles.optionTextActive : null
-                    }
+                    style={{
+                      color:
+                        matchLevel === "beginner"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     Principiante
                   </ThemedText>
@@ -391,16 +472,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchLevel === "intermediate" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchLevel === "intermediate"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchLevel === "intermediate"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchLevel("intermediate")}
                 >
                   <ThemedText
-                    style={
-                      matchLevel === "intermediate"
-                        ? styles.optionTextActive
-                        : null
-                    }
+                    style={{
+                      color:
+                        matchLevel === "intermediate"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     Intermedio
                   </ThemedText>
@@ -409,14 +500,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchLevel === "advanced" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchLevel === "advanced"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchLevel === "advanced"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchLevel("advanced")}
                 >
                   <ThemedText
-                    style={
-                      matchLevel === "advanced" ? styles.optionTextActive : null
-                    }
+                    style={{
+                      color:
+                        matchLevel === "advanced"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     Avanzado
                   </ThemedText>
@@ -425,14 +528,26 @@ export default function CreateMatchScreen() {
                 <TouchableOpacity
                   style={[
                     styles.optionButton,
-                    matchLevel === "all" && styles.optionButtonActive,
+                    {
+                      backgroundColor:
+                        matchLevel === "all"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                      borderColor:
+                        matchLevel === "all"
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                    },
                   ]}
                   onPress={() => setMatchLevel("all")}
                 >
                   <ThemedText
-                    style={
-                      matchLevel === "all" ? styles.optionTextActive : null
-                    }
+                    style={{
+                      color:
+                        matchLevel === "all"
+                          ? "white"
+                          : Colors[colorScheme].text,
+                    }}
                   >
                     Todos
                   </ThemedText>
@@ -466,10 +581,19 @@ export default function CreateMatchScreen() {
                     )}
                   </View>
                   <TouchableOpacity
-                    style={styles.changeButton}
+                    style={[
+                      styles.changeButton,
+                      { backgroundColor: Colors[colorScheme].primary + "20" },
+                    ]}
                     onPress={() => setShowFieldSelector(true)}
                   >
-                    <ThemedText type="caption" style={styles.changeButtonText}>
+                    <ThemedText
+                      type="caption"
+                      style={[
+                        styles.changeButtonText,
+                        { color: Colors[colorScheme].primary },
+                      ]}
+                    >
                       Cambiar
                     </ThemedText>
                   </TouchableOpacity>
@@ -594,12 +718,21 @@ export default function CreateMatchScreen() {
                   <TouchableOpacity
                     style={[
                       styles.toggleButton,
-                      !isPrivate && styles.toggleActive,
+                      {
+                        backgroundColor: !isPrivate
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                        borderColor: !isPrivate
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                      },
                     ]}
                     onPress={() => setIsPrivate(false)}
                   >
                     <ThemedText
-                      style={!isPrivate ? styles.toggleActiveText : null}
+                      style={{
+                        color: !isPrivate ? "white" : Colors[colorScheme].text,
+                      }}
                     >
                       Público
                     </ThemedText>
@@ -608,12 +741,21 @@ export default function CreateMatchScreen() {
                   <TouchableOpacity
                     style={[
                       styles.toggleButton,
-                      isPrivate && styles.toggleActive,
+                      {
+                        backgroundColor: isPrivate
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].card,
+                        borderColor: isPrivate
+                          ? Colors[colorScheme].primary
+                          : Colors[colorScheme].border,
+                      },
                     ]}
                     onPress={() => setIsPrivate(true)}
                   >
                     <ThemedText
-                      style={isPrivate ? styles.toggleActiveText : null}
+                      style={{
+                        color: isPrivate ? "white" : Colors[colorScheme].text,
+                      }}
                     >
                       Privado
                     </ThemedText>
@@ -638,22 +780,38 @@ export default function CreateMatchScreen() {
                 <View style={styles.uniformField}>
                   <ThemedText type="body">Equipo A:</ThemedText>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: Colors[colorScheme].card,
+                        color: Colors[colorScheme].text,
+                        borderColor: Colors[colorScheme].border,
+                        borderWidth: 1,
+                      },
+                    ]}
                     value={uniformA}
                     onChangeText={setUniformA}
                     placeholder="Ej: Camiseta blanca"
-                    placeholderTextColor="#9E9E9E"
+                    placeholderTextColor={Colors[colorScheme].textSecondary}
                   />
                 </View>
 
                 <View style={styles.uniformField}>
                   <ThemedText type="body">Equipo B:</ThemedText>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: Colors[colorScheme].card,
+                        color: Colors[colorScheme].text,
+                        borderColor: Colors[colorScheme].border,
+                        borderWidth: 1,
+                      },
+                    ]}
                     value={uniformB}
                     onChangeText={setUniformB}
                     placeholder="Ej: Camiseta azul"
-                    placeholderTextColor="#9E9E9E"
+                    placeholderTextColor={Colors[colorScheme].textSecondary}
                   />
                 </View>
               </View>
@@ -666,11 +824,20 @@ export default function CreateMatchScreen() {
               </ThemedText>
 
               <TextInput
-                style={[styles.textInput, styles.multilineInput]}
+                style={[
+                  styles.textInput,
+                  styles.multilineInput,
+                  {
+                    backgroundColor: Colors[colorScheme].card,
+                    color: Colors[colorScheme].text,
+                    borderColor: Colors[colorScheme].border,
+                    borderWidth: 1,
+                  },
+                ]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Agrega detalles adicionales sobre el partido..."
-                placeholderTextColor="#9E9E9E"
+                placeholderTextColor={Colors[colorScheme].textSecondary}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -688,7 +855,13 @@ export default function CreateMatchScreen() {
             />
 
             {error && (
-              <ThemedText type="caption" style={styles.errorText}>
+              <ThemedText
+                type="caption"
+                style={[
+                  styles.errorText,
+                  { color: Colors[colorScheme].danger },
+                ]}
+              >
                 {error}
               </ThemedText>
             )}
@@ -735,9 +908,9 @@ const styles = StyleSheet.create({
   },
   dateTimePicker: {
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginBottom: Spacing.s,
+    borderWidth: 1,
   },
   inputWithIcon: {
     flexDirection: "row",
@@ -748,10 +921,8 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderWidth: 1,
-    borderColor: Colors.light.danger,
   },
   errorText: {
-    color: Colors.light.danger,
     marginBottom: Spacing.s,
   },
   dateTimePickerComponent: {
@@ -767,18 +938,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.s,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
     minWidth: 80,
     alignItems: "center",
     marginBottom: Spacing.xs,
-  },
-  optionButtonActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  optionTextActive: {
-    color: "white",
-    fontWeight: "600",
   },
   selectedFieldContainer: {
     flexDirection: "row",
@@ -789,11 +951,9 @@ const styles = StyleSheet.create({
   changeButton: {
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs,
-    backgroundColor: Colors.light.primary + "20",
     borderRadius: 4,
   },
   changeButtonText: {
-    color: Colors.light.primary,
     fontWeight: "600",
   },
   fieldSelectorContainer: {
@@ -858,15 +1018,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  toggleActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  toggleActiveText: {
-    color: "white",
-    fontWeight: "600",
   },
   privacyInfo: {
     marginTop: Spacing.xs,
@@ -879,7 +1030,6 @@ const styles = StyleSheet.create({
   },
   textInput: {
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     fontSize: 16,
   },
