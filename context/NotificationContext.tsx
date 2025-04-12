@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export type NotificationType = "success" | "error" | "info" | "warning";
@@ -174,7 +174,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
               styles.notification,
               { backgroundColor: getBackgroundColor() },
             ]}
-            rounded
+            rounded="m"
             shadow="m"
           >
             <View style={styles.iconContainer}>
@@ -223,11 +223,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
     maxWidth: 500,
     width: "100%",
     ...Platform.select({
@@ -256,7 +251,7 @@ const styles = StyleSheet.create({
   },
   closeText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: Typography.fontSizes.m,
+    fontWeight: Typography.fontWeights.bold,
   },
 });

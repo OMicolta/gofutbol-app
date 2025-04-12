@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Match } from "@/store/matchStore";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useMatches } from "@/hooks/useMatches";
 import { useNotification } from "@/context/NotificationContext";
@@ -144,7 +144,7 @@ export function MatchCard({
           <View style={styles.compactInfo}>
             <View style={styles.compactHeader}>
               <View style={styles.dateTimeInfo}>
-                <ThemedView style={styles.dateChip} rounded>
+                <ThemedView style={styles.dateChip} rounded variant="secondary">
                   <ThemedText style={styles.dateChipText} weight="semiBold">
                     {getRelativeDate()}
                   </ThemedText>
@@ -157,7 +157,11 @@ export function MatchCard({
                   {formattedTime}
                 </ThemedText>
               </View>
-              <ThemedView style={styles.typeBadge} rounded="s">
+              <ThemedView
+                style={styles.typeBadge}
+                rounded="s"
+                variant="secondary"
+              >
                 <ThemedText style={styles.typeText}>{match.type}</ThemedText>
               </ThemedView>
             </View>
@@ -180,8 +184,8 @@ export function MatchCard({
                       width: `${(confirmedPlayers / match.maxPlayers) * 100}%`,
                       backgroundColor:
                         confirmedPlayers >= match.maxPlayers / 2
-                          ? Colors.light.success
-                          : Colors.light.warning,
+                          ? Colors[colorScheme].success
+                          : Colors[colorScheme].warning,
                     },
                   ]}
                 />
@@ -229,7 +233,7 @@ export function MatchCard({
     <Card onPress={handlePress} style={styles.card} shadow="s">
       <View style={styles.header}>
         <View style={styles.dateContainer}>
-          <ThemedView style={styles.dateChip} rounded>
+          <ThemedView style={styles.dateChip} rounded variant="secondary">
             <ThemedText style={styles.dateChipText} weight="semiBold">
               {getRelativeDate()}
             </ThemedText>
@@ -240,7 +244,7 @@ export function MatchCard({
         </View>
 
         <View style={styles.typeAndStatus}>
-          <ThemedView style={styles.typeBadge} rounded="s">
+          <ThemedView style={styles.typeBadge} rounded="s" variant="secondary">
             <ThemedText style={styles.typeText}>{match.type}</ThemedText>
           </ThemedView>
 
@@ -305,8 +309,8 @@ export function MatchCard({
                   width: `${(confirmedPlayers / match.maxPlayers) * 100}%`,
                   backgroundColor:
                     confirmedPlayers >= match.maxPlayers / 2
-                      ? Colors.light.success
-                      : Colors.light.warning,
+                      ? Colors[colorScheme].success
+                      : Colors[colorScheme].warning,
                 },
               ]}
             />
@@ -425,7 +429,8 @@ const styles = StyleSheet.create({
   },
   dateChipText: {
     color: Colors.light.primary,
-    fontSize: 14,
+    fontSize: Typography.fontSizes.s,
+    fontWeight: Typography.fontWeights.semiBold,
   },
   timeText: {
     marginLeft: Spacing.xs,
@@ -436,34 +441,34 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   typeBadge: {
-    backgroundColor: "#1DB95420",
+    backgroundColor: Colors.light.primary + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
   typeText: {
-    color: "#1DB954",
-    fontWeight: "600",
-    fontSize: 14,
+    color: Colors.light.primary,
+    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
   },
   cancelledBadge: {
-    backgroundColor: "#F4433620",
+    backgroundColor: Colors.light.danger + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
   cancelledText: {
-    color: "#F44336",
-    fontWeight: "600",
-    fontSize: 14,
+    color: Colors.light.danger,
+    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
   },
   fullBadge: {
-    backgroundColor: "#FF980020",
+    backgroundColor: Colors.light.warning + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
   fullText: {
-    color: "#FF9800",
-    fontWeight: "600",
-    fontSize: 14,
+    color: Colors.light.warning,
+    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
   },
   content: {
     marginBottom: Spacing.m,
@@ -478,21 +483,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   infoIcon: {
-    marginRight: 4,
+    marginRight: Spacing.xs,
   },
   playerSection: {
     marginTop: Spacing.m,
   },
   playerBar: {
     height: 8,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
+    backgroundColor: Colors.light.borderLight,
+    borderRadius: Shape.radius.xs,
     marginBottom: Spacing.xs,
     overflow: "hidden",
   },
   playerProgress: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: Shape.radius.xs,
   },
   playerText: {
     flexDirection: "row",
@@ -525,8 +530,8 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.s,
   },
   moreAvatars: {
     width: 32,
@@ -540,8 +545,8 @@ const styles = StyleSheet.create({
   },
   moreAvatarsText: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.xs,
   },
   footer: {
     flexDirection: "row",
@@ -554,7 +559,7 @@ const styles = StyleSheet.create({
     gap: Spacing.s,
   },
   organizerBadge: {
-    backgroundColor: "#1DB954",
+    backgroundColor: Colors.light.primary,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.s,
@@ -563,10 +568,10 @@ const styles = StyleSheet.create({
   },
   organizerText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   confirmedBadge: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.light.success,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.s,
@@ -575,15 +580,15 @@ const styles = StyleSheet.create({
   },
   confirmedText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   statusText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   urgentSpots: {
     color: Colors.light.warning,
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   // Estilos para versión compacta
   compactCard: {

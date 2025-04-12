@@ -3,15 +3,13 @@
 import React from "react";
 import { StyleSheet, View, TouchableOpacity, FlatList } from "react-native";
 import { Image } from "expo-image";
-import { router } from "expo-router";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Button } from "@/components/ui/Button";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { PlayerEntry, TeamType } from "@/store/matchStore";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface PlayerListProps {
   players: PlayerEntry[];
@@ -29,6 +27,7 @@ export function PlayerList({
   onRemovePlayer,
 }: PlayerListProps) {
   const { user } = useAuth();
+  const colorScheme = useColorScheme();
 
   // Filtrar solo jugadores confirmados
   const confirmedPlayers = players.filter(
@@ -117,7 +116,7 @@ export function PlayerList({
       </ThemedText>
 
       {/* Equipo A */}
-      <ThemedView style={styles.teamContainer} variant="secondary" rounded>
+      <ThemedView style={styles.teamContainer} variant="secondary" rounded="m">
         <ThemedText type="body" weight="semiBold" style={styles.teamTitle}>
           Equipo A ({teamA.length})
         </ThemedText>
@@ -134,7 +133,7 @@ export function PlayerList({
       </ThemedView>
 
       {/* Equipo B */}
-      <ThemedView style={styles.teamContainer} variant="secondary" rounded>
+      <ThemedView style={styles.teamContainer} variant="secondary" rounded="m">
         <ThemedText type="body" weight="semiBold" style={styles.teamTitle}>
           Equipo B ({teamB.length})
         </ThemedText>
@@ -152,7 +151,11 @@ export function PlayerList({
 
       {/* Sin asignar */}
       {unassigned.length > 0 && (
-        <ThemedView style={styles.teamContainer} variant="secondary" rounded>
+        <ThemedView
+          style={styles.teamContainer}
+          variant="secondary"
+          rounded="m"
+        >
           <ThemedText type="body" weight="semiBold" style={styles.teamTitle}>
             Sin equipo ({unassigned.length})
           </ThemedText>
@@ -211,16 +214,17 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   teamButton: {
-    backgroundColor: "#1DB95420",
+    backgroundColor: Colors.light.primary + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs,
     borderRadius: Shape.radius.s,
   },
   teamButtonText: {
-    color: "#1DB954",
+    color: Colors.light.primary,
+    fontWeight: Typography.fontWeights.semiBold,
   },
   removeButton: {
-    backgroundColor: "#F4433620",
+    backgroundColor: Colors.light.danger + "20",
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -228,7 +232,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   removeButtonText: {
-    color: "#F44336",
+    color: Colors.light.danger,
+    fontWeight: Typography.fontWeights.semiBold,
   },
   emptyTeam: {
     textAlign: "center",

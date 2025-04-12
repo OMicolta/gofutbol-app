@@ -14,10 +14,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { PlayerEntry } from "@/store/matchStore";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useRatings } from "@/hooks/useRatings";
 import { useNotification } from "@/context/NotificationContext";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface RatingFormProps {
   matchId: string;
@@ -28,6 +29,7 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
   const { user } = useAuth();
   const { ratePlayer, isLoading, error, getMatchRatings } = useRatings();
   const { showNotification } = useNotification();
+  const colorScheme = useColorScheme();
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerEntry | null>(
     null
@@ -135,7 +137,7 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
   // Si no hay jugadores para calificar
   if (playersToRate.length === 0) {
     return (
-      <ThemedView style={styles.emptyContainer}>
+      <ThemedView style={styles.emptyContainer} variant="secondary" rounded="m">
         <ThemedText type="body" secondary style={styles.emptyText}>
           Ya has calificado a todos los jugadores de este partido o no hay
           jugadores para calificar.
@@ -168,6 +170,10 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
                 styles.playerItem,
                 selectedPlayer?.userId === player.userId &&
                   styles.selectedPlayer,
+                selectedPlayer?.userId === player.userId && {
+                  borderColor: Colors[colorScheme].primary,
+                  backgroundColor: Colors[colorScheme].primary + "10",
+                },
               ]}
               onPress={() => setSelectedPlayer(player)}
             >
@@ -190,7 +196,11 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
 
       {/* Formulario de calificación */}
       {selectedPlayer ? (
-        <ThemedView style={styles.formContainer}>
+        <ThemedView
+          style={styles.formContainer}
+          variant="secondary"
+          rounded="m"
+        >
           <ThemedText type="body" weight="semiBold" style={styles.playerTitle}>
             Calificando a {selectedPlayer.displayName}
           </ThemedText>
@@ -204,6 +214,9 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
                   styles.toggleButton,
                   styles.toggleYes,
                   attendance && styles.toggleActive,
+                  attendance && {
+                    backgroundColor: Colors[colorScheme].success,
+                  },
                 ]}
                 onPress={() => setAttendance(true)}
               >
@@ -220,6 +233,9 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
                   styles.toggleButton,
                   styles.toggleNo,
                   !attendance && styles.toggleActive,
+                  !attendance && {
+                    backgroundColor: Colors[colorScheme].danger,
+                  },
                 ]}
                 onPress={() => setAttendance(false)}
               >
@@ -257,6 +273,7 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
                       styles.toggleButton,
                       styles.toggleYes,
                       isMVP && styles.toggleActive,
+                      isMVP && { backgroundColor: Colors[colorScheme].primary },
                     ]}
                     onPress={() => setIsMVP(true)}
                   >
@@ -300,7 +317,7 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
           {isLoading && (
             <ActivityIndicator
               size="small"
-              color={Colors.light.primary}
+              color={Colors[colorScheme].primary}
               style={styles.loader}
             />
           )}
@@ -312,7 +329,11 @@ export function RatingForm({ matchId, players }: RatingFormProps) {
           )}
         </ThemedView>
       ) : (
-        <ThemedView style={styles.noPlayerContainer}>
+        <ThemedView
+          style={styles.noPlayerContainer}
+          variant="secondary"
+          rounded="m"
+        >
           <ThemedText type="body" secondary>
             Selecciona un jugador para calificarlo
           </ThemedText>
@@ -360,8 +381,6 @@ const styles = StyleSheet.create({
   formContainer: {
     marginTop: Spacing.m,
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
-    borderRadius: Shape.radius.m,
   },
   playerTitle: {
     marginBottom: Spacing.m,
@@ -374,14 +393,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   star: {
-    fontSize: 30,
+    fontSize: Typography.fontSizes.xxl,
     marginRight: Spacing.xs,
   },
   starActive: {
     color: "#FFD700", // Gold
   },
   starInactive: {
-    color: "#E0E0E0",
+    color: Colors.light.borderLight,
   },
   starDisabled: {
     opacity: 0.5,
@@ -394,7 +413,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.m,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.light.border,
   },
   toggleYes: {
     borderTopLeftRadius: Shape.radius.s,
@@ -405,12 +424,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: Shape.radius.s,
   },
   toggleActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    borderColor: "transparent",
   },
   toggleActiveText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   submitButton: {
     marginTop: Spacing.m,
@@ -426,8 +444,6 @@ const styles = StyleSheet.create({
   noPlayerContainer: {
     marginTop: Spacing.m,
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
-    borderRadius: Shape.radius.m,
     alignItems: "center",
     justifyContent: "center",
     height: 100,
@@ -435,8 +451,6 @@ const styles = StyleSheet.create({
   emptyContainer: {
     marginTop: Spacing.m,
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
-    borderRadius: Shape.radius.m,
     alignItems: "center",
     justifyContent: "center",
   },

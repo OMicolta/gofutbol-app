@@ -6,7 +6,7 @@ import { StyleSheet, View, ScrollView, TouchableOpacity } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Field, FieldAvailability } from "@/store/fieldStore";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface AvailabilityCalendarProps {
@@ -155,7 +155,7 @@ export function AvailabilityCalendar({
               style={[
                 selectedDay === day.dayOfWeek && {
                   color: Colors[colorScheme].primary,
-                  fontWeight: "600",
+                  fontWeight: Typography.fontWeights.semiBold,
                 },
               ]}
             >
@@ -204,6 +204,7 @@ export function AvailabilityCalendar({
                   selectedTime === time && styles.selectedTimeSlot,
                   selectedTime === time && {
                     backgroundColor: Colors[colorScheme].primary,
+                    borderColor: Colors[colorScheme].primary,
                   },
                 ]}
                 onPress={() => handleTimeSelect(time)}
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: Shape.radius.m,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.light.border,
     marginRight: Spacing.s,
     alignItems: "center",
     justifyContent: "center",
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   dayNumber: {
-    fontSize: 24,
+    fontSize: Typography.fontSizes.xl,
     marginVertical: Spacing.xs,
   },
   monthText: {
@@ -276,26 +277,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "flex-start",
+    gap: Spacing.xs,
   },
   timeSlot: {
-    width: "30%",
+    width: "31%",
     borderRadius: Shape.radius.m,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.light.border,
     padding: Spacing.s,
-    marginRight: "3%",
-    marginBottom: Spacing.s,
+    marginBottom: Spacing.xs,
     alignItems: "center",
   },
   selectedTimeSlot: {
-    borderWidth: 0,
+    borderColor: Colors.light.primary,
   },
   timeText: {
-    fontSize: 14,
+    fontSize: Typography.fontSizes.s,
   },
   selectedTimeText: {
     color: "white",
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   noTimesText: {
     textAlign: "center",

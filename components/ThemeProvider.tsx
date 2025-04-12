@@ -5,8 +5,11 @@ import {
   useColorScheme as useNativeColorScheme,
   AppState,
   AppStateStatus,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { useThemeStore, ThemeType } from "@/store/themeStore";
+import { Colors } from "@/constants/Colors";
 
 // Creamos un contexto para el tema que expondrá tanto el tema como la función para cambiarlo
 type ThemeContextType = {
@@ -34,6 +37,21 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
   const nativeColorScheme = useNativeColorScheme();
   const { theme: themePreference, setTheme, effectiveTheme } = useThemeStore();
   const theme = effectiveTheme(nativeColorScheme);
+
+  // Aplicar cambios de StatusBar según el tema
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      StatusBar.setBarStyle(
+        theme === "dark" ? "light-content" : "dark-content"
+      );
+
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor(
+          theme === "dark" ? Colors.dark.background : Colors.light.background
+        );
+      }
+    }
+  }, [theme]);
 
   // Manejar cambios en el estado de la aplicación (por ej., cuando vuelve a primer plano)
   useEffect(() => {

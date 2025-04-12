@@ -10,7 +10,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/store/fieldStore";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface FieldCardProps {
   field: Field;
@@ -19,6 +20,8 @@ interface FieldCardProps {
 }
 
 export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
+  const colorScheme = useColorScheme();
+
   // Manejar clic en la tarjeta
   const handlePress = () => {
     if (onPress) {
@@ -41,7 +44,7 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
   // Renderizar la versión compacta o completa
   if (compact) {
     return (
-      <Card onPress={handlePress} style={styles.compactCard}>
+      <Card onPress={handlePress} style={styles.compactCard} shadow="s">
         <View style={styles.compactContent}>
           <Image
             source={imageSource}
@@ -66,7 +69,7 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
   }
 
   return (
-    <Card onPress={handlePress} style={styles.card}>
+    <Card onPress={handlePress} style={styles.card} shadow="s">
       <Image
         source={imageSource}
         style={styles.image}
@@ -78,7 +81,11 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
         <View style={styles.header}>
           <ThemedText type="subheading">{field.name}</ThemedText>
           {field.distance !== undefined && (
-            <ThemedView style={styles.distanceBadge} rounded="s">
+            <ThemedView
+              style={styles.distanceBadge}
+              rounded="s"
+              variant="secondary"
+            >
               <ThemedText style={styles.distanceText}>
                 {field.distance} km
               </ThemedText>
@@ -113,7 +120,12 @@ export function FieldCard({ field, onPress, compact = false }: FieldCardProps) {
         {field.facilities && field.facilities.length > 0 && (
           <View style={styles.facilitiesContainer}>
             {field.facilities.slice(0, 3).map((facility, index) => (
-              <ThemedView key={index} style={styles.facilityChip} rounded="s">
+              <ThemedView
+                key={index}
+                style={styles.facilityChip}
+                rounded="s"
+                variant="secondary"
+              >
                 <ThemedText type="caption">{facility}</ThemedText>
               </ThemedView>
             ))}
@@ -154,14 +166,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   distanceBadge: {
-    backgroundColor: "#1DB95420",
+    backgroundColor: Colors.light.primary + "20",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
   distanceText: {
-    color: "#1DB954",
-    fontSize: 12,
-    fontWeight: "500",
+    color: Colors.light.primary,
+    fontSize: Typography.fontSizes.s,
+    fontWeight: Typography.fontWeights.medium,
   },
   detailsContainer: {
     marginTop: Spacing.s,
@@ -172,7 +184,7 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xs / 2,
   },
   priceText: {
-    color: "#1DB954",
+    color: Colors.light.primary,
   },
   facilitiesContainer: {
     flexDirection: "row",
@@ -182,7 +194,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   facilityChip: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.light.borderLight,
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs / 2,
   },
@@ -191,7 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: Spacing.m,
   },
-  // Estilos para la versión compacta
+  // Estilos para versión compacta
   compactCard: {
     marginBottom: Spacing.s,
     padding: 0,

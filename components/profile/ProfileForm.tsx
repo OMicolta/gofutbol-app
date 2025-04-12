@@ -12,7 +12,7 @@ import {
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors, Spacing, Shape } from "@/constants/Colors";
+import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { UserProfile } from "@/store/authStore";
 
@@ -98,38 +98,52 @@ export function ProfileForm({ initialData, onDataChange }: ProfileFormProps) {
       <ThemedText type="body" weight="semiBold" style={styles.fieldLabel}>
         Nombre completo *
       </ThemedText>
-      <TextInput
+      <ThemedView
         style={[
-          styles.textInput,
+          styles.inputField,
           errors.displayName ? styles.inputError : null,
         ]}
-        value={displayName}
-        onChangeText={setDisplayName}
-        placeholder="Tu nombre completo"
-        placeholderTextColor={Colors[colorScheme].placeholder}
-      />
+        variant="secondary"
+        rounded="m"
+      >
+        <TextInput
+          style={[styles.textInput, { color: Colors[colorScheme].text }]}
+          value={displayName}
+          onChangeText={setDisplayName}
+          placeholder="Tu nombre completo"
+          placeholderTextColor={Colors[colorScheme].placeholder}
+        />
+      </ThemedView>
       {errors.displayName && (
-        <ThemedText style={styles.errorText}>{errors.displayName}</ThemedText>
+        <ThemedText style={styles.errorText} type="caption">
+          {errors.displayName}
+        </ThemedText>
       )}
 
       <ThemedText type="body" weight="semiBold" style={styles.fieldLabel}>
         Posición en la cancha
       </ThemedText>
       <TouchableOpacity
-        style={styles.selector}
         onPress={() => setShowPositionSelector(!showPositionSelector)}
       >
-        <ThemedText>{position || "Selecciona tu posición"}</ThemedText>
-        <IconSymbol
-          name={showPositionSelector ? "chevron.right" : "arrow.right"}
-          size={20}
-          color={Colors[colorScheme].icon}
-        />
+        <ThemedView style={styles.selector} variant="secondary" rounded="m">
+          <ThemedText>{position || "Selecciona tu posición"}</ThemedText>
+          <IconSymbol
+            name={showPositionSelector ? "chevron.right" : "arrow.right"}
+            size={20}
+            color={Colors[colorScheme].icon}
+          />
+        </ThemedView>
       </TouchableOpacity>
 
       {/* Selector de posición */}
       {showPositionSelector && (
-        <ThemedView style={styles.optionsContainer} variant="secondary" rounded>
+        <ThemedView
+          style={styles.optionsContainer}
+          variant="secondary"
+          rounded="m"
+          shadow="s"
+        >
           {positionOptions.map((option) => (
             <TouchableOpacity
               key={option}
@@ -164,21 +178,25 @@ export function ProfileForm({ initialData, onDataChange }: ProfileFormProps) {
       <ThemedText type="body" weight="semiBold" style={styles.fieldLabel}>
         Zona de la ciudad
       </ThemedText>
-      <TouchableOpacity
-        style={styles.selector}
-        onPress={() => setShowZoneSelector(!showZoneSelector)}
-      >
-        <ThemedText>{zone || "Selecciona tu zona"}</ThemedText>
-        <IconSymbol
-          name={showZoneSelector ? "chevron.right" : "arrow.right"}
-          size={20}
-          color={Colors[colorScheme].icon}
-        />
+      <TouchableOpacity onPress={() => setShowZoneSelector(!showZoneSelector)}>
+        <ThemedView style={styles.selector} variant="secondary" rounded="m">
+          <ThemedText>{zone || "Selecciona tu zona"}</ThemedText>
+          <IconSymbol
+            name={showZoneSelector ? "chevron.right" : "arrow.right"}
+            size={20}
+            color={Colors[colorScheme].icon}
+          />
+        </ThemedView>
       </TouchableOpacity>
 
       {/* Selector de zona */}
       {showZoneSelector && (
-        <ThemedView style={styles.optionsContainer} variant="secondary" rounded>
+        <ThemedView
+          style={styles.optionsContainer}
+          variant="secondary"
+          rounded="m"
+          shadow="s"
+        >
           <ScrollView style={styles.optionsScroll} nestedScrollEnabled>
             {zoneOptions.map((option) => (
               <TouchableOpacity
@@ -213,7 +231,7 @@ export function ProfileForm({ initialData, onDataChange }: ProfileFormProps) {
       )}
 
       {/* Notas sobre estadísticas */}
-      <ThemedView style={styles.statsNote} variant="secondary" rounded>
+      <ThemedView style={styles.statsNote} variant="secondary" rounded="m">
         <ThemedText type="caption" secondary>
           Las estadísticas como asistencia, puntualidad y calificaciones son
           calculadas automáticamente basadas en tus partidos y no pueden ser
@@ -230,13 +248,15 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     marginBottom: Spacing.xs,
+    marginTop: Spacing.m,
+  },
+  inputField: {
+    marginBottom: Spacing.s,
   },
   textInput: {
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
-    borderRadius: Shape.radius.m,
-    fontSize: 16,
-    marginBottom: Spacing.m,
+    fontSize: Typography.fontSizes.m,
+    height: 50,
   },
   inputError: {
     borderWidth: 1,
@@ -249,8 +269,6 @@ const styles = StyleSheet.create({
   },
   selector: {
     padding: Spacing.m,
-    backgroundColor: "#f5f5f5",
-    borderRadius: Shape.radius.m,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -260,7 +278,6 @@ const styles = StyleSheet.create({
     marginTop: -Spacing.s,
     marginBottom: Spacing.m,
     padding: Spacing.s,
-    borderRadius: Shape.radius.m,
     maxHeight: 200,
   },
   optionsScroll: {
@@ -279,7 +296,7 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     color: Colors.light.primary,
-    fontWeight: "600",
+    fontWeight: Typography.fontWeights.semiBold,
   },
   statsNote: {
     padding: Spacing.m,
