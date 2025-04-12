@@ -214,8 +214,8 @@ export default function ProfileScreen() {
                   )}
 
                   <ThemedView style={styles.changePhotoButton} rounded>
-                    <ThemedText type="caption" style={styles.changePhotoText}>
-                      Cambiar
+                    <ThemedText type="caption">
+                      <IconSymbol name="pencil" size={16} color="white" />
                     </ThemedText>
                   </ThemedView>
                 </TouchableOpacity>
@@ -408,13 +408,13 @@ const styles = StyleSheet.create({
     bottom: -5,
     right: -5,
     backgroundColor: Colors.light.primary,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-  },
-  changePhotoText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "bold",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "white",
   },
   profileInfo: {
     flex: 1,
