@@ -1,6 +1,6 @@
 // components/profile/ThemeSelector.tsx
 import React, { useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -28,34 +28,57 @@ export function ThemeSelector() {
     }
   };
 
+  // Obtener el ícono del tema actual
+  const getThemeIcon = () => {
+    switch (themePreference) {
+      case "light":
+        return "sun.max.fill";
+      case "dark":
+        return "moon.fill";
+      case "system":
+        return "gear";
+      default:
+        return "gear";
+    }
+  };
+
   return (
     <>
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => setModalVisible(true)}
       >
-        <ThemedView style={styles.container} variant="card" rounded>
-          <ThemedText type="subtitle">Tema de la Aplicación</ThemedText>
+        <ThemedView style={styles.container} variant="card" rounded shadow="s">
+          <View style={styles.headerRow}>
+            <ThemedText type="subtitle">Tema de la Aplicación</ThemedText>
+            <IconSymbol
+              name={getThemeIcon()}
+              size={24}
+              color={Colors[colorScheme].primary}
+            />
+          </View>
 
           <ThemedView
             style={styles.selectedThemeContainer}
             variant="secondary"
             rounded
           >
-            <ThemedText>{getThemeName()}</ThemedText>
+            <View style={styles.themeInfo}>
+              <ThemedText weight="semiBold">{getThemeName()}</ThemedText>
+              <ThemedText type="caption" secondary>
+                {themePreference === "system"
+                  ? `Usando tema del sistema (${
+                      colorScheme === "dark" ? "Oscuro" : "Claro"
+                    })`
+                  : `Tema seleccionado manualmente`}
+              </ThemedText>
+            </View>
             <IconSymbol
               name="chevron.right"
               size={20}
               color={Colors[colorScheme].icon}
             />
           </ThemedView>
-
-          <ThemedText style={styles.note} secondary>
-            {themePreference === "system"
-              ? "Usando el tema del sistema: " +
-                (colorScheme === "dark" ? "Oscuro" : "Claro")
-              : ""}
-          </ThemedText>
         </ThemedView>
       </TouchableOpacity>
 
@@ -72,14 +95,22 @@ const styles = StyleSheet.create({
     padding: Spacing.m,
     marginVertical: Spacing.s,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.m,
+  },
   selectedThemeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: Spacing.m,
     paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
+    paddingVertical: Spacing.m,
     borderRadius: Shape.radius.m,
+  },
+  themeInfo: {
+    flex: 1,
   },
   note: {
     fontSize: 12,

@@ -13,12 +13,14 @@ import {
   Animated,
   Dimensions,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors, Spacing } from "@/constants/Colors";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export type NotificationType = "success" | "error" | "info" | "warning";
@@ -48,6 +50,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [type, setType] = useState<NotificationType>("info");
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const translateY = useState(new Animated.Value(-100))[0];
+  const opacity = useState(new Animated.Value(0))[0];
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
 
@@ -68,11 +71,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     setVisible(true);
 
     // Animar entrada
-    Animated.spring(translateY, {
-      toValue: 0,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
+    Animated.parallel([
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 100,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     // Configurar timeout para ocultar
     const id = setTimeout(() => {
@@ -84,11 +95,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
   // Ocultar notificación
   const hideNotification = () => {
-    Animated.timing(translateY, {
-      toValue: -100,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       setVisible(false);
     });
 
@@ -106,6 +124,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       }
     };
   }, [timeoutId]);
+
+  // Obtener ícono según el tipo de notificación
+  const getNotificationIcon = () => {
+    switch (type) {
+      case "success":
+        return "checkmark";
+      case "error":
+        return "xmark";
+      case "warning":
+        return "bell.fill";
+      default:
+        return "bell.fill";
+    }
+  };
 
   // Obtener color según el tipo de notificación
   const getBackgroundColor = () => {
@@ -130,7 +162,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         <Animated.View
           style={[
             styles.notificationContainer,
-            { transform: [{ translateY }], top: insets.top },
+            {
+              transform: [{ translateY }],
+              opacity,
+              top: insets.top + 10,
+            },
           ]}
         >
           <ThemedView
@@ -139,7 +175,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
               { backgroundColor: getBackgroundColor() },
             ]}
             rounded
+            shadow="m"
           >
+            <View style={styles.iconContainer}>
+              <IconSymbol
+                name={getNotificationIcon()}
+                size={24}
+                color="white"
+              />
+            </View>
             <ThemedText style={styles.notificationText} weight="semiBold">
               {message}
             </ThemedText>
@@ -172,6 +216,7 @@ const styles = StyleSheet.create({
     width: "100%",
     zIndex: 9999,
     padding: Spacing.m,
+    alignItems: "center",
   },
   notification: {
     padding: Spacing.m,
@@ -183,13 +228,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    maxWidth: 500,
+    width: "100%",
+    ...Platform.select({
+      web: {
+        maxWidth: 400,
+      },
+    }),
+  },
+  iconContainer: {
+    width: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.s,
   },
   notificationText: {
     flex: 1,
     color: "white",
+    marginHorizontal: Spacing.xs,
   },
   closeButton: {
     padding: Spacing.xs,
+    height: 30,
+    width: 30,
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeText: {
     color: "white",

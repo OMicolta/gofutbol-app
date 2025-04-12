@@ -29,10 +29,26 @@ export function ThemeModal({ visible, onClose }: ThemeModalProps) {
     value: ThemeType;
     label: string;
     icon: IconSymbolName;
+    description: string;
   }[] = [
-    { value: "light", label: "Claro", icon: "house.fill" },
-    { value: "dark", label: "Oscuro", icon: "house.fill" },
-    { value: "system", label: "Sistema", icon: "gear" },
+    {
+      value: "light",
+      label: "Claro",
+      icon: "sun.max.fill",
+      description: "Interfaz con fondo claro, ideal para uso diurno",
+    },
+    {
+      value: "dark",
+      label: "Oscuro",
+      icon: "moon.fill",
+      description: "Interfaz con fondo oscuro, reduce fatiga visual nocturna",
+    },
+    {
+      value: "system",
+      label: "Sistema",
+      icon: "gear",
+      description: "Se adapta automáticamente al tema de tu dispositivo",
+    },
   ];
 
   const selectTheme = (theme: ThemeType) => {
@@ -57,7 +73,10 @@ export function ThemeModal({ visible, onClose }: ThemeModalProps) {
         >
           <View style={styles.header}>
             <ThemedText type="subtitle">Seleccionar tema</ThemedText>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButtonContainer}
+            >
               <ThemedText type="body" style={styles.closeButton}>
                 ✕
               </ThemedText>
@@ -74,37 +93,49 @@ export function ThemeModal({ visible, onClose }: ThemeModalProps) {
                   {
                     backgroundColor:
                       themePreference === option.value
-                        ? Colors[colorScheme].tint + "20"
+                        ? Colors[colorScheme].primary + "20"
                         : "transparent",
                   },
                 ]}
                 onPress={() => selectTheme(option.value)}
               >
-                <IconSymbol
-                  name={option.icon}
-                  size={24}
-                  color={
-                    themePreference === option.value
-                      ? Colors[colorScheme].tint
-                      : Colors[colorScheme].text
-                  }
-                />
-                <ThemedText
-                  style={[
-                    styles.optionText,
-                    themePreference === option.value && {
-                      color: Colors[colorScheme].tint,
-                    },
-                  ]}
-                >
-                  {option.label}
-                </ThemedText>
+                <View style={styles.iconContainer}>
+                  <IconSymbol
+                    name={option.icon}
+                    size={28}
+                    color={
+                      themePreference === option.value
+                        ? Colors[colorScheme].primary
+                        : Colors[colorScheme].text
+                    }
+                  />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <ThemedText
+                    style={[
+                      styles.optionText,
+                      themePreference === option.value && {
+                        color: Colors[colorScheme].primary,
+                        fontWeight: Typography.fontWeights.semiBold,
+                      },
+                    ]}
+                  >
+                    {option.label}
+                  </ThemedText>
+                  <ThemedText
+                    type="caption"
+                    secondary
+                    style={styles.optionDescription}
+                  >
+                    {option.description}
+                  </ThemedText>
+                </View>
                 {themePreference === option.value && (
                   <View style={styles.checkmarkContainer}>
                     <IconSymbol
-                      name="chevron.right"
+                      name="checkmark"
                       size={20}
-                      color={Colors[colorScheme].tint}
+                      color={Colors[colorScheme].primary}
                     />
                   </View>
                 )}
@@ -132,8 +163,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    width: "80%",
-    maxWidth: 400,
+    width: "90%",
+    maxWidth: 420,
     padding: Spacing.m,
     ...Platform.select({
       ios: {
@@ -152,6 +183,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.m,
+    paddingBottom: Spacing.s,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  closeButtonContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
   closeButton: {
     fontSize: Typography.fontSizes.l,
@@ -159,29 +201,50 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     marginTop: Spacing.s,
+    gap: Spacing.m,
   },
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
-    borderRadius: Shape.radius.s,
-    marginBottom: Spacing.s,
+    borderRadius: Shape.radius.m,
+    marginBottom: Spacing.xs,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.s,
   },
   selectedOption: {
     borderWidth: 1,
     borderColor: "transparent",
   },
+  optionTextContainer: {
+    flex: 1,
+  },
   optionText: {
-    marginLeft: Spacing.m,
     fontSize: 16,
+    marginBottom: 2,
+  },
+  optionDescription: {
+    fontSize: 12,
+    opacity: 0.7,
   },
   checkmarkContainer: {
     marginLeft: "auto",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
   note: {
     fontSize: 12,
-    marginTop: Spacing.s,
+    marginTop: Spacing.m,
     fontStyle: "italic",
+    textAlign: "center",
   },
 });

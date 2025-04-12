@@ -1,6 +1,6 @@
 // app/(tabs)/index.tsx
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   StyleSheet,
   ScrollView,
@@ -25,39 +25,56 @@ import { useMatches } from "@/hooks/useMatches";
 import { useRatings } from "@/hooks/useRatings";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const { user, profile, requireAuth } = useAuth();
+  const { user, profile } = useAuth();
   const { fields, fetchFields, getUserLocation } = useFields();
   const { myMatches, myCreatedMatches, fetchMatches } = useMatches();
   const { pendingRatings, fetchPendingRatings } = useRatings();
+  const { showNotification } = useNotification();
 
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar autenticación y cargar datos iniciales
+  // Referencia para controlar si el componente está montado
+  const isMounted = useRef(false);
+
+  // Establecer la referencia de montaje
   useEffect(() => {
-    requireAuth();
-    if (user) {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Verificar autenticación y cargar datos iniciales de forma segura
+  useEffect(() => {
+    // Solo cargar datos si el usuario existe y el componente está montado
+    if (user && isMounted.current) {
       loadInitialData();
     }
   }, [user?.uid]);
 
-  // Actualizar cuando la pantalla obtiene foco
+  // Actualizar cuando la pantalla obtiene foco de forma segura
   useFocusEffect(
     useCallback(() => {
-      if (user) {
-        // No recargar datos completos para evitar parpadeo
-        // Actualizar solo lo necesario
+      // Solo actualizar si el usuario existe y el componente está montado
+      if (user && isMounted.current) {
         silentRefresh();
       }
+
+      return () => {
+        // Cleanup si es necesario
+      };
     }, [user?.uid])
   );
 
   // Cargar datos iniciales
   const loadInitialData = async () => {
-    if (!user) return;
+    if (!user || !isMounted.current) return;
 
     setIsLoading(true);
     try {
@@ -71,23 +88,28 @@ export default function HomeScreen() {
       await fetchMatches(user.uid, true);
 
       // Cargar calificaciones pendientes
-      // Corregido: Pasando el ID del usuario
       await fetchPendingRatings(user.uid);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
+      // Solo mostrar notificación si el componente sigue montado
+      if (isMounted.current) {
+        showNotification("Error al cargar datos. Intenta más tarde.", "error");
+      }
     } finally {
-      setIsLoading(false);
+      // Solo actualizar estado si el componente sigue montado
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   // Actualizar datos sin mostrar indicador de carga
   const silentRefresh = async () => {
-    if (!user) return;
+    if (!user || !isMounted.current) return;
 
     try {
       await Promise.all([
         fetchMatches(user.uid, true),
-        // Corregido: Pasando el ID del usuario
         fetchPendingRatings(user.uid),
       ]);
     } catch (error) {
@@ -97,15 +119,20 @@ export default function HomeScreen() {
 
   // Manejar refresh manual
   const onRefresh = async () => {
+    if (!user || !isMounted.current) return;
+
     setRefreshing(true);
     await loadInitialData();
-    setRefreshing(false);
+    // Solo actualizar estado si el componente sigue montado
+    if (isMounted.current) {
+      setRefreshing(false);
+    }
   };
 
   // Obtener partidos próximos (combinados creados y unidos)
   const getUpcomingMatches = () => {
     const now = new Date();
-    const allMatches = [...myCreatedMatches, ...myMatches];
+    const allMatches = [...(myCreatedMatches || []), ...(myMatches || [])];
 
     // Eliminar duplicados
     const uniqueMatches = allMatches.filter(
@@ -122,9 +149,19 @@ export default function HomeScreen() {
   // Obtener canchas cercanas
   const getNearbyFields = () => {
     // Ordenar por distancia y tomar las 2 primeras
-    return [...fields]
+    return [...(fields || [])]
       .sort((a, b) => (a.distance || 999) - (b.distance || 999))
       .slice(0, 2);
+  };
+
+  // Manejar navegación segura
+  const handleSafeNavigation = (route: string) => {
+    // Usar setTimeout para asegurar que la navegación ocurra después del render
+    setTimeout(() => {
+      if (isMounted.current) {
+        router.push(route as any);
+      }
+    }, 0);
   };
 
   if (isLoading) {
@@ -160,9 +197,9 @@ export default function HomeScreen() {
           </View>
 
           {/* Calificaciones pendientes */}
-          {pendingRatings.length > 0 && (
+          {pendingRatings && pendingRatings.length > 0 && (
             <View style={styles.pendingRatings}>
-              <Card onPress={() => router.push("/ratings/pending" as any)}>
+              <Card onPress={() => handleSafeNavigation("/ratings/pending")}>
                 <View style={styles.pendingRatingsContent}>
                   <View>
                     <ThemedText type="body" weight="semiBold">
@@ -190,7 +227,7 @@ export default function HomeScreen() {
             <View style={styles.actionsRow}>
               <Card
                 style={styles.actionCard}
-                onPress={() => router.push("/match/create" as any)}
+                onPress={() => handleSafeNavigation("/match/create")}
                 shadow="s"
               >
                 <IconSymbol name="soccer.ball" size={24} color="#1DB954" />
@@ -205,7 +242,7 @@ export default function HomeScreen() {
 
               <Card
                 style={styles.actionCard}
-                onPress={() => router.push("/(tabs)/explore")}
+                onPress={() => handleSafeNavigation("/(tabs)/explore")}
                 shadow="s"
               >
                 <IconSymbol name="paperplane.fill" size={24} color="#1DB954" />
@@ -220,7 +257,7 @@ export default function HomeScreen() {
 
               <Card
                 style={styles.actionCard}
-                onPress={() => router.push("/(tabs)/matches")}
+                onPress={() => handleSafeNavigation("/(tabs)/matches")}
                 shadow="s"
               >
                 <IconSymbol name="person.fill" size={24} color="#1DB954" />
@@ -243,11 +280,11 @@ export default function HomeScreen() {
                 title="Ver todos"
                 variant="ghost"
                 size="small"
-                onPress={() => router.push("/(tabs)/matches")}
+                onPress={() => handleSafeNavigation("/(tabs)/matches")}
               />
             </View>
 
-            {upcomingMatches.length > 0 ? (
+            {upcomingMatches && upcomingMatches.length > 0 ? (
               upcomingMatches.map((match) => (
                 <MatchCard key={match.id} match={match} mode="compact" />
               ))
@@ -263,7 +300,7 @@ export default function HomeScreen() {
                 <Button
                   title="Crear Partido"
                   size="small"
-                  onPress={() => router.push("/match/create" as any)}
+                  onPress={() => handleSafeNavigation("/match/create")}
                   style={styles.emptyListButton}
                 />
               </ThemedView>
@@ -278,11 +315,11 @@ export default function HomeScreen() {
                 title="Ver mapa"
                 variant="ghost"
                 size="small"
-                onPress={() => router.push("/(tabs)/explore")}
+                onPress={() => handleSafeNavigation("/(tabs)/explore")}
               />
             </View>
 
-            {nearbyFields.length > 0 ? (
+            {nearbyFields && nearbyFields.length > 0 ? (
               nearbyFields.map((field) => (
                 <FieldCard key={field.id} field={field} compact />
               ))
@@ -300,7 +337,7 @@ export default function HomeScreen() {
                 <Button
                   title="Explorar Canchas"
                   size="small"
-                  onPress={() => router.push("/(tabs)/explore")}
+                  onPress={() => handleSafeNavigation("/(tabs)/explore")}
                   style={styles.emptyListButton}
                 />
               </ThemedView>

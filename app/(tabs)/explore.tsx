@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -20,6 +20,7 @@ import { FieldCard } from "@/components/field/FieldCard";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useFields } from "@/hooks/useFields";
+import { useAuth } from "@/hooks/useAuth";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
@@ -37,6 +38,7 @@ const filterOptions = [
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
+  const { user, isInitializing: authInitializing } = useAuth();
   const {
     fields,
     filteredFields,
@@ -55,24 +57,31 @@ export default function ExploreScreen() {
   const [selectedFilters, setSelectedFilters] = useState<string[]>(["closest"]);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
 
-  // Cargar canchas al montar componente
+  // Cargar canchas cuando la autenticación esté lista
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authInitializing && user) {
+      loadData();
+    }
+  }, [authInitializing, user]);
 
   // Actualizar cuando la pantalla obtiene foco
   useFocusEffect(
     useCallback(() => {
-      // No recargar datos completos para evitar parpadeo
-      // Solo actualizar ubicación si es necesario
-      if (isLocationEnabled) {
+      // Solo intentar operaciones si hay usuario autenticado
+      if (user && isLocationEnabled) {
         updateLocation();
       }
-    }, [isLocationEnabled])
+    }, [isLocationEnabled, user])
   );
 
   // Cargar datos iniciales
   const loadData = async () => {
+    // Si no hay usuario, no intentamos cargar datos
+    if (!user) {
+      showNotification("Debes iniciar sesión para explorar canchas", "warning");
+      return;
+    }
+
     try {
       // Intentar obtener ubicación
       const location = await getUserLocation();
@@ -88,6 +97,8 @@ export default function ExploreScreen() {
 
   // Actualizar ubicación del usuario
   const updateLocation = async () => {
+    if (!user) return;
+
     try {
       await getUserLocation();
     } catch (error) {
@@ -97,6 +108,11 @@ export default function ExploreScreen() {
 
   // Manejar búsqueda
   const handleSearch = () => {
+    if (!user) {
+      showNotification("Debes iniciar sesión para buscar canchas", "warning");
+      return;
+    }
+
     setFilters({ query: searchQuery });
   };
 
@@ -108,6 +124,11 @@ export default function ExploreScreen() {
 
   // Manejar filtros
   const toggleFilter = (filterId: string) => {
+    if (!user) {
+      showNotification("Debes iniciar sesión para filtrar canchas", "warning");
+      return;
+    }
+
     let newFilters: string[];
 
     if (selectedFilters.includes(filterId)) {
@@ -124,6 +145,9 @@ export default function ExploreScreen() {
 
   // Aplicar filtros seleccionados
   const applyFilters = (selectedFilters: string[]) => {
+    // Si no hay usuario, no aplicamos filtros
+    if (!user) return;
+
     // Reiniciar filtros
     resetFilters();
 
@@ -166,10 +190,50 @@ export default function ExploreScreen() {
 
   // Manejar refresh
   const onRefresh = async () => {
+    // Si no hay usuario, no refrescamos
+    if (!user) {
+      showNotification("Debes iniciar sesión para actualizar datos", "warning");
+      return;
+    }
+
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
   };
+
+  // Manejar navegación a login
+  const handleGoToLogin = () => {
+    router.replace("/(auth)/login");
+  };
+
+  // Si no hay usuario autenticado, mostrar pantalla de autenticación requerida
+  if (!user && !authInitializing) {
+    return (
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
+
+        <SafeAreaView style={styles.authRequiredContainer}>
+          <IconSymbol
+            name="lock.fill"
+            size={60}
+            color={Colors[colorScheme].primary}
+          />
+          <ThemedText type="subtitle" style={styles.authRequiredTitle}>
+            Iniciar sesión requerido
+          </ThemedText>
+          <ThemedText style={styles.authRequiredText}>
+            Necesitas iniciar sesión para explorar canchas disponibles.
+          </ThemedText>
+          <Button
+            title="Iniciar sesión"
+            size="large"
+            onPress={handleGoToLogin}
+            style={styles.loginButton}
+          />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -406,5 +470,24 @@ const styles = StyleSheet.create({
   },
   clearFiltersButton: {
     minWidth: 150,
+  },
+  // Estilos para la pantalla de autenticación requerida
+  authRequiredContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.l,
+  },
+  authRequiredTitle: {
+    marginTop: Spacing.l,
+    marginBottom: Spacing.m,
+  },
+  authRequiredText: {
+    textAlign: "center",
+    marginBottom: Spacing.l,
+    maxWidth: 300,
+  },
+  loginButton: {
+    minWidth: 200,
   },
 });

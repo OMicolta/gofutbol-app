@@ -9,7 +9,6 @@ import {
   Platform,
   TouchableOpacity,
   Image,
-  Alert,
   ScrollView,
 } from "react-native";
 import { router } from "expo-router";
@@ -21,38 +20,26 @@ import { Button } from "@/components/ui/Button";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
-import { useNotification } from "@/context/NotificationContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signInWithEmail, error, clearError, redirectIfAuthenticated } =
-    useAuth();
-  const { showNotification } = useNotification();
+  const { safeSignIn, error, clearError } = useAuth();
 
   // Manejar inicio de sesión
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Por favor ingresa tu email y contraseña");
-      return;
-    }
-
     setIsSubmitting(true);
-    clearError();
+    if (clearError) clearError();
 
-    try {
-      await signInWithEmail(email, password);
+    // Usando el nuevo método seguro de inicio de sesión
+    const success = await safeSignIn(email, password);
+
+    if (success) {
       router.replace("/(tabs)");
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      Alert.alert(
-        "Error al iniciar sesión",
-        "Verifica tu email y contraseña e intenta nuevamente."
-      );
-    } finally {
-      setIsSubmitting(false);
     }
+
+    setIsSubmitting(false);
   };
 
   // Manejar éxito del login con Google
@@ -62,10 +49,7 @@ export default function LoginScreen() {
 
   // Manejar error del login con Google
   const handleGoogleError = (error: Error) => {
-    showNotification(
-      `Error al iniciar sesión con Google: ${error.message}`,
-      "error"
-    );
+    // La notificación se maneja en el componente GoogleAuthButton
   };
 
   return (

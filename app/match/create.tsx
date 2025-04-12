@@ -48,15 +48,51 @@ export default function CreateMatchScreen() {
   const [uniformA, setUniformA] = useState("");
   const [uniformB, setUniformB] = useState("");
   const [description, setDescription] = useState("");
+  const [fieldSearchQuery, setFieldSearchQuery] = useState("");
 
   // Estados para los pickers de fecha y hora en Android
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // Estado para validación del formulario
+  const [formErrors, setFormErrors] = useState<{
+    date?: string;
+    field?: string;
+  }>({});
+
+  // Estado para rastrear si el formulario está completo
+  const [isFormValid, setIsFormValid] = useState(false);
+
   // Cargar canchas disponibles
   useEffect(() => {
     fetchFields(true);
+    // Iniciamos con la fecha de hoy pero sumando 1 hora
+    const newDate = new Date();
+    newDate.setHours(newDate.getHours() + 1);
+    setTime(newDate);
   }, []);
+
+  // Validar formulario cuando cambian los campos principales
+  useEffect(() => {
+    validateForm();
+  }, [date, matchType, selectedField]);
+
+  // Función de validación del formulario
+  const validateForm = () => {
+    const errors: { date?: string; field?: string } = {};
+    let valid = true;
+
+    // Validar fecha
+    const now = new Date();
+    if (date < now) {
+      errors.date = "La fecha del partido debe ser futura";
+      valid = false;
+    }
+
+    setFormErrors(errors);
+    setIsFormValid(valid);
+    return valid;
+  };
 
   // Formatear fecha para mostrar
   const formatDate = (date: Date) => {
@@ -96,6 +132,21 @@ export default function CreateMatchScreen() {
   const handleFieldSelect = (field: Field) => {
     setSelectedField(field);
     setShowFieldSelector(false);
+
+    // Mostrar notificación de confirmación
+    showNotification(`Cancha "${field.name}" seleccionada`, "success");
+  };
+
+  // Filtrar canchas por búsqueda
+  const getFilteredFields = () => {
+    if (!fieldSearchQuery.trim()) return fields;
+
+    return fields.filter(
+      (field) =>
+        field.name.toLowerCase().includes(fieldSearchQuery.toLowerCase()) ||
+        field.zone.toLowerCase().includes(fieldSearchQuery.toLowerCase()) ||
+        field.address.toLowerCase().includes(fieldSearchQuery.toLowerCase())
+    );
   };
 
   // Manejar creación del partido
@@ -105,13 +156,16 @@ export default function CreateMatchScreen() {
       return;
     }
 
-    try {
-      // Verificar datos mínimos
-      if (date < new Date()) {
-        Alert.alert("Error", "La fecha del partido debe ser futura");
-        return;
-      }
+    // Validar formulario antes de continuar
+    if (!validateForm()) {
+      showNotification(
+        "Por favor corrige los errores en el formulario",
+        "error"
+      );
+      return;
+    }
 
+    try {
       // Combinar fecha y hora
       const matchDateTime = new Date(date);
       matchDateTime.setHours(time.getHours(), time.getMinutes());
@@ -135,7 +189,10 @@ export default function CreateMatchScreen() {
       // Crear partido
       const matchId = await createMatch(matchData);
 
-      showNotification("Partido creado correctamente", "success");
+      showNotification(
+        "¡Partido creado correctamente! Invita a tus amigos.",
+        "success"
+      );
 
       // Navegar al detalle del partido
       router.replace(`/match/${matchId}` as any);
@@ -161,7 +218,7 @@ export default function CreateMatchScreen() {
               onPress={() => router.back()}
             >
               <IconSymbol
-                name="chevron.right"
+                name="arrow.left"
                 size={24}
                 color={Colors[colorScheme].text}
               />
@@ -180,17 +237,42 @@ export default function CreateMatchScreen() {
               </ThemedText>
 
               <TouchableOpacity
-                style={styles.dateTimePicker}
+                style={[
+                  styles.dateTimePicker,
+                  formErrors.date ? styles.inputError : null,
+                ]}
                 onPress={() => setShowDatePicker(true)}
               >
-                <ThemedText type="body">Fecha: {formatDate(date)}</ThemedText>
+                <View style={styles.inputWithIcon}>
+                  <IconSymbol
+                    name="calendar"
+                    size={20}
+                    color={Colors[colorScheme].textSecondary}
+                    style={styles.inputIcon}
+                  />
+                  <ThemedText type="body">{formatDate(date)}</ThemedText>
+                </View>
               </TouchableOpacity>
+
+              {formErrors.date && (
+                <ThemedText type="caption" style={styles.errorText}>
+                  {formErrors.date}
+                </ThemedText>
+              )}
 
               <TouchableOpacity
                 style={styles.dateTimePicker}
                 onPress={() => setShowTimePicker(true)}
               >
-                <ThemedText type="body">Hora: {formatTime(time)}</ThemedText>
+                <View style={styles.inputWithIcon}>
+                  <IconSymbol
+                    name="calendar"
+                    size={20}
+                    color={Colors[colorScheme].textSecondary}
+                    style={styles.inputIcon}
+                  />
+                  <ThemedText type="body">{formatTime(time)}</ThemedText>
+                </View>
               </TouchableOpacity>
 
               {(showDatePicker || Platform.OS === "ios") && (
@@ -377,6 +459,11 @@ export default function CreateMatchScreen() {
                     <ThemedText type="caption" secondary>
                       {selectedField.address}
                     </ThemedText>
+                    {selectedField.distance && (
+                      <ThemedText type="caption" secondary>
+                        {selectedField.distance} km • {selectedField.zone}
+                      </ThemedText>
+                    )}
                   </View>
                   <TouchableOpacity
                     style={styles.changeButton}
@@ -391,6 +478,7 @@ export default function CreateMatchScreen() {
                 <Button
                   title="Seleccionar cancha"
                   size="medium"
+                  leftIcon="paperplane.fill"
                   variant={showFieldSelector ? "filled" : "outlined"}
                   onPress={() => setShowFieldSelector(!showFieldSelector)}
                 />
@@ -410,13 +498,44 @@ export default function CreateMatchScreen() {
                     Selecciona una cancha
                   </ThemedText>
 
+                  {/* Buscador de cancha */}
+                  <ThemedView
+                    style={styles.searchContainer}
+                    variant="secondary"
+                    rounded
+                  >
+                    <IconSymbol
+                      name="paperplane.fill"
+                      size={20}
+                      color={Colors[colorScheme].textSecondary}
+                    />
+                    <TextInput
+                      style={[
+                        styles.searchInput,
+                        { color: Colors[colorScheme].text },
+                      ]}
+                      placeholder="Buscar cancha por nombre o zona..."
+                      placeholderTextColor={Colors[colorScheme].textSecondary}
+                      value={fieldSearchQuery}
+                      onChangeText={setFieldSearchQuery}
+                    />
+                    {fieldSearchQuery.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setFieldSearchQuery("")}
+                        style={styles.clearButton}
+                      >
+                        <ThemedText style={styles.clearText}>✕</ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </ThemedView>
+
                   {fields.length > 0 ? (
                     <ScrollView
                       style={styles.fieldsList}
                       showsVerticalScrollIndicator={false}
                       nestedScrollEnabled
                     >
-                      {fields.map((field) => (
+                      {getFilteredFields().map((field) => (
                         <TouchableOpacity
                           key={field.id}
                           style={styles.fieldItem}
@@ -431,6 +550,7 @@ export default function CreateMatchScreen() {
                             </ThemedText>
                             <ThemedText type="caption" secondary>
                               {field.zone} • {field.priceFormatted}
+                              {field.distance ? ` • ${field.distance} km` : ""}
                             </ThemedText>
                           </View>
                         </TouchableOpacity>
@@ -563,7 +683,7 @@ export default function CreateMatchScreen() {
               size="large"
               fullWidth
               onPress={handleCreateMatch}
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
               style={styles.createButton}
             />
 
@@ -601,7 +721,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
   scrollContent: {
     padding: Spacing.l,
@@ -617,6 +737,21 @@ const styles = StyleSheet.create({
     padding: Spacing.m,
     backgroundColor: "#f5f5f5",
     borderRadius: 8,
+    marginBottom: Spacing.s,
+  },
+  inputWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputIcon: {
+    marginRight: Spacing.m,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: Colors.light.danger,
+  },
+  errorText: {
+    color: Colors.light.danger,
     marginBottom: Spacing.s,
   },
   dateTimePickerComponent: {
@@ -664,13 +799,33 @@ const styles = StyleSheet.create({
   fieldSelectorContainer: {
     marginTop: Spacing.s,
     padding: Spacing.m,
-    maxHeight: 300,
+    maxHeight: 400,
   },
   fieldSelectorTitle: {
     marginBottom: Spacing.s,
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.xs,
+    marginBottom: Spacing.m,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: Spacing.s,
+    fontSize: 16,
+    height: 40,
+  },
+  clearButton: {
+    padding: Spacing.xs,
+  },
+  clearText: {
+    fontSize: 16,
+    color: "#9E9E9E",
+  },
   fieldsList: {
-    maxHeight: 200,
+    maxHeight: 250,
   },
   fieldItem: {
     paddingVertical: Spacing.s,
@@ -734,10 +889,5 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: Spacing.l,
-  },
-  errorText: {
-    color: Colors.light.danger,
-    marginTop: Spacing.s,
-    textAlign: "center",
   },
 });

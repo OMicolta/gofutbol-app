@@ -10,7 +10,9 @@ import {
   ViewStyle,
   TouchableOpacityProps,
   Platform,
+  Animated,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Colors, Spacing, Shape, Typography } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol, IconSymbolName } from "@/components/ui/IconSymbol";
@@ -49,10 +51,33 @@ export function Button({
   textStyle,
   buttonStyle,
   fullWidth = false,
+  onPress,
   ...rest
 }: ButtonProps) {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+
+  // Animación para efecto de presión
+  const animatedScale = new Animated.Value(1);
+
+  // Manejar animación de presión
+  const handlePressIn = () => {
+    Animated.spring(animatedScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 5,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(animatedScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 5,
+    }).start();
+  };
 
   // Determine styles based on variant, color, and size
   const getBackgroundColor = () => {
@@ -82,14 +107,14 @@ export function Button({
       case "small":
         return {
           padding: Spacing.xs,
-          height: 32,
+          height: 36,
           borderRadius: Shape.radius.s,
         };
       case "large":
         return { padding: Spacing.m, height: 56, borderRadius: Shape.radius.m };
       case "medium":
       default:
-        return { padding: Spacing.s, height: 44, borderRadius: Shape.radius.s };
+        return { padding: Spacing.s, height: 48, borderRadius: Shape.radius.s };
     }
   };
 
@@ -124,71 +149,89 @@ export function Button({
   const fontSize = getFontSize();
   const iconSize = getIconSize();
 
+  // Custom onPress handler con haptic feedback
+  const handlePress = (event: any) => {
+    if (onPress && !disabled && !loading) {
+      // Agrega feedback háptico para botones principales
+      if (Platform.OS === "ios" && variant === "filled") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      onPress(event);
+    }
+  };
+
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        {
-          backgroundColor,
-          borderColor,
-          borderWidth: variant === "outlined" ? 1 : 0,
-          paddingHorizontal: buttonSizeStyle.padding * 2,
-          height: buttonSizeStyle.height,
-          borderRadius: buttonSizeStyle.borderRadius,
-          width: fullWidth ? "100%" : "auto",
-        },
-        // Apply shadow only to filled buttons on iOS
-        variant === "filled" &&
-          Platform.OS === "ios" &&
-          !disabled &&
-          Shape.shadow.s,
-        // Apply elevation only to filled buttons on Android
-        variant === "filled" &&
-          Platform.OS === "android" &&
-          !disabled && { elevation: 2 },
-        buttonStyle,
-      ]}
-      disabled={disabled || loading}
-      {...rest}
-    >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === "filled" ? "white" : theme[color]}
-        />
-      ) : (
-        <>
-          {leftIcon && (
-            <IconSymbol
-              name={leftIcon}
-              size={iconSize}
-              color={textColor}
-              style={styles.leftIcon}
-            />
-          )}
-          <ThemedText
-            style={[
-              {
-                fontSize,
-                color: textColor,
-              },
-              textStyle,
-            ]}
-            weight="semiBold"
-          >
-            {title}
-          </ThemedText>
-          {rightIcon && (
-            <IconSymbol
-              name={rightIcon}
-              size={iconSize}
-              color={textColor}
-              style={styles.rightIcon}
-            />
-          )}
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: animatedScale }] }}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          {
+            backgroundColor,
+            borderColor,
+            borderWidth: variant === "outlined" ? 1 : 0,
+            paddingHorizontal: buttonSizeStyle.padding * 2,
+            height: buttonSizeStyle.height,
+            borderRadius: buttonSizeStyle.borderRadius,
+            width: fullWidth ? "100%" : "auto",
+          },
+          // Apply shadow only to filled buttons on iOS
+          variant === "filled" &&
+            Platform.OS === "ios" &&
+            !disabled &&
+            Shape.shadow.s,
+          // Apply elevation only to filled buttons on Android
+          variant === "filled" &&
+            Platform.OS === "android" &&
+            !disabled && { elevation: 2 },
+          buttonStyle,
+        ]}
+        disabled={disabled || loading}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.8}
+        {...rest}
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === "filled" ? "white" : theme[color]}
+          />
+        ) : (
+          <>
+            {leftIcon && (
+              <IconSymbol
+                name={leftIcon}
+                size={iconSize}
+                color={textColor}
+                style={styles.leftIcon}
+              />
+            )}
+            <ThemedText
+              style={[
+                {
+                  fontSize,
+                  color: textColor,
+                },
+                textStyle,
+              ]}
+              weight="semiBold"
+            >
+              {title}
+            </ThemedText>
+            {rightIcon && (
+              <IconSymbol
+                name={rightIcon}
+                size={iconSize}
+                color={textColor}
+                style={styles.rightIcon}
+              />
+            )}
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

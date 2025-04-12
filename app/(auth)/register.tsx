@@ -1,6 +1,6 @@
 // app/(auth)/register.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -8,11 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Image,
-  Alert,
   ScrollView,
 } from "react-native";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -20,6 +18,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -27,50 +26,41 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUpWithEmail, error, clearError, redirectIfAuthenticated } =
-    useAuth();
+  const {
+    safeSignUp,
+    error,
+    clearError,
+    redirectIfAuthenticated,
+    isInitializing,
+  } = useAuth();
+  const { showNotification } = useNotification();
+
+  // Verificar si ya está autenticado y redirigir si es necesario
+  useEffect(() => {
+    if (!isInitializing) {
+      redirectIfAuthenticated();
+    }
+  }, [isInitializing]);
 
   // Manejar registro
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Por favor completa todos los campos");
-      return;
-    }
-
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
+      showNotification("Las contraseñas no coinciden", "error");
       return;
     }
 
     setIsSubmitting(true);
     clearError();
 
-    try {
-      await signUpWithEmail(email, password, name);
-      Alert.alert(
-        "Registro exitoso",
-        "Tu cuenta ha sido creada correctamente.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)"),
-          },
-        ]
-      );
-    } catch (error) {
-      console.error("Error al registrarse:", error);
-      Alert.alert(
-        "Error al registrarse",
-        "Ha ocurrido un error durante el registro. Por favor intenta nuevamente."
-      );
-    } finally {
-      setIsSubmitting(false);
+    // Usando el nuevo método seguro de registro
+    const success = await safeSignUp(email, password, name);
+
+    if (success) {
+      showNotification("¡Registro exitoso! Bienvenido a GoFutbol", "success");
+      router.replace("/(tabs)");
     }
+
+    setIsSubmitting(false);
   };
 
   return (

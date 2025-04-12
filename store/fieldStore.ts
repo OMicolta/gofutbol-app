@@ -78,7 +78,9 @@ interface FieldState {
   selectField: (field: Field | null) => void;
   getUserLocation: () => Promise<Location.LocationObject | null>;
   calculateDistances: () => void;
-  applyFilters: () => void; // Agregado para solucionar error
+  applyFilters: () => void;
+  setError: (errorMessage: string | null) => void; // Nuevo método
+  clearFields: () => void; // Nuevo método
 }
 
 const defaultFilters: FieldFilters = {
@@ -95,6 +97,22 @@ export const useFieldStore = create<FieldState>()((set, get) => ({
   isLoading: false,
   error: null,
   lastVisible: null,
+
+  // Método para establecer un mensaje de error específico
+  setError: (errorMessage: string | null) => {
+    set({ error: errorMessage });
+  },
+
+  // Método para limpiar todos los campos (útil para logout o reset)
+  clearFields: () => {
+    set({
+      fields: [],
+      filteredFields: [],
+      selectedField: null,
+      lastVisible: null,
+      error: null,
+    });
+  },
 
   // Obtener campos con paginación
   fetchFields: async (fresh = false) => {
@@ -204,6 +222,7 @@ export const useFieldStore = create<FieldState>()((set, get) => ({
         isLoading: false,
         error: (error as Error).message,
       });
+      throw error; // Relanzar para manejo superior
     }
   },
 
@@ -274,7 +293,7 @@ export const useFieldStore = create<FieldState>()((set, get) => ({
         isLoading: false,
         error: (error as Error).message,
       });
-      return null;
+      throw error; // Relanzar para manejo superior
     }
   },
 
@@ -387,7 +406,7 @@ export const useFieldStore = create<FieldState>()((set, get) => ({
       return location;
     } catch (error) {
       set({ error: (error as Error).message });
-      return null;
+      throw error; // Relanzar para manejo superior
     }
   },
 

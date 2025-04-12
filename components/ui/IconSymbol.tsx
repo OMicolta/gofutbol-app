@@ -14,12 +14,26 @@ const MAPPING = {
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
   "soccer.ball": "sports-soccer",
-  "soccerball.circle": "sports-soccer", // Añadimos este mapping
+  "soccerball.circle": "sports-soccer",
   "person.fill": "person",
   calendar: "calendar-today",
   "star.fill": "star",
   gear: "settings",
   checkmark: "check",
+  // Nuevos mappings para íconos de tema
+  "sun.max.fill": "light-mode",
+  "moon.fill": "dark-mode",
+  "light.beacon.max.fill": "light-mode",
+  "lock.fill": "lock",
+  globe: "public",
+  "bell.fill": "notifications",
+  "trash.fill": "delete",
+  pencil: "edit",
+  "arrow.left": "arrow-back",
+  "arrow.right": "arrow-forward",
+  plus: "add",
+  minus: "remove",
+  xmark: "close",
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;
