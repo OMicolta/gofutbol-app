@@ -144,6 +144,19 @@ export function useMatches() {
     }
   };
 
+  // Función para actualizar un partido con mejor manejo de errores
+  const updateMatch = async (matchId: string, matchData: Partial<Match>) => {
+    try {
+      if (!user)
+        throw new Error("Debes iniciar sesión para actualizar un partido");
+      await matchStore.updateMatch(matchId, matchData);
+    } catch (error) {
+      console.error("Error al actualizar partido:", error);
+      handleFirebaseError(error);
+      throw error;
+    }
+  };
+
   // Función para aplicar filtros a los partidos
   const applyFilters = (filters: any) => {
     try {
@@ -223,6 +236,7 @@ export function useMatches() {
     invitePlayer,
     changeTeam,
     cancelMatch,
+    updateMatch,
     applyFilters,
     loadMoreMatches,
     retryLoadAfterIndexError,

@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker } from "react-native-maps";
@@ -38,6 +37,7 @@ export default function MatchDetailScreen() {
     joinMatch,
     leaveMatch,
     changeTeam,
+    cancelMatch,
     isLoading,
     error,
   } = useMatches();
@@ -205,6 +205,7 @@ export default function MatchDetailScreen() {
 
   // Manejar cancelación del partido (solo para el creador)
   const handleCancelMatch = () => {
+    if (!match) return;
     Alert.alert(
       "Cancelar partido",
       "¿Estás seguro de que quieres cancelar este partido? Esta acción no se puede deshacer.",
@@ -217,8 +218,17 @@ export default function MatchDetailScreen() {
           text: "Sí, cancelar",
           style: "destructive",
           onPress: async () => {
-            // Esta funcionalidad se implementará en una versión futura
-            showNotification("Funcionalidad en desarrollo", "info");
+            try {
+              await cancelMatch(match.id);
+              showNotification("El partido ha sido cancelado", "success");
+
+              // Recargar datos del partido para actualizar la UI
+              const updatedMatch = await getMatchDetails(match.id);
+              setMatch(updatedMatch);
+            } catch (error) {
+              console.error("Error al cancelar partido:", error);
+              showNotification(`Error: ${(error as Error).message}`, "error");
+            }
           },
         },
       ]
