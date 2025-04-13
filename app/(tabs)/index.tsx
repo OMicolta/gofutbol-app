@@ -225,50 +225,60 @@ export default function HomeScreen() {
           {/* Sección de acciones rápidas */}
           <View style={styles.actionsSection}>
             <View style={styles.actionsRow}>
-              <Card
-                style={styles.actionCard}
-                onPress={() => handleSafeNavigation("/match/create")}
-                shadow="s"
-              >
-                <IconSymbol name="soccer.ball" size={24} color="#1DB954" />
-                <ThemedText
-                  type="body"
-                  weight="semiBold"
-                  style={styles.actionText}
+              <View style={styles.actionCardContainer}>
+                <Card
+                  style={styles.actionCard}
+                  onPress={() => handleSafeNavigation("/match/create")}
+                  shadow="s"
                 >
-                  Nuevo Partido
-                </ThemedText>
-              </Card>
+                  <IconSymbol name="soccer.ball" size={24} color="#1DB954" />
+                  <ThemedText
+                    type="body"
+                    weight="semiBold"
+                    style={styles.actionText}
+                  >
+                    Nuevo Partido
+                  </ThemedText>
+                </Card>
+              </View>
 
-              <Card
-                style={styles.actionCard}
-                onPress={() => handleSafeNavigation("/(tabs)/explore")}
-                shadow="s"
-              >
-                <IconSymbol name="paperplane.fill" size={24} color="#1DB954" />
-                <ThemedText
-                  type="body"
-                  weight="semiBold"
-                  style={styles.actionText}
+              <View style={styles.actionCardContainer}>
+                <Card
+                  style={styles.actionCard}
+                  onPress={() => handleSafeNavigation("/(tabs)/explore")}
+                  shadow="s"
                 >
-                  Buscar Canchas
-                </ThemedText>
-              </Card>
+                  <IconSymbol
+                    name="paperplane.fill"
+                    size={24}
+                    color="#1DB954"
+                  />
+                  <ThemedText
+                    type="body"
+                    weight="semiBold"
+                    style={styles.actionText}
+                  >
+                    Buscar Canchas
+                  </ThemedText>
+                </Card>
+              </View>
 
-              <Card
-                style={styles.actionCard}
-                onPress={() => handleSafeNavigation("/(tabs)/matches")}
-                shadow="s"
-              >
-                <IconSymbol name="person.fill" size={24} color="#1DB954" />
-                <ThemedText
-                  type="body"
-                  weight="semiBold"
-                  style={styles.actionText}
+              <View style={styles.actionCardContainer}>
+                <Card
+                  style={styles.actionCard}
+                  onPress={() => handleSafeNavigation("/(tabs)/matches")}
+                  shadow="s"
                 >
-                  Ver Partidos
-                </ThemedText>
-              </Card>
+                  <IconSymbol name="person.fill" size={24} color="#1DB954" />
+                  <ThemedText
+                    type="body"
+                    weight="semiBold"
+                    style={styles.actionText}
+                  >
+                    Ver Partidos
+                  </ThemedText>
+                </Card>
+              </View>
             </View>
           </View>
 
@@ -378,15 +388,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  actionCard: {
+  actionCardContainer: {
     width: "31%",
+  },
+  actionCard: {
+    flex: 1,
+    minHeight: 100,
+    justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.m,
+    padding: 12,
+    borderRadius: 12,
   },
   actionText: {
     marginTop: Spacing.xs,
     textAlign: "center",
-    fontSize: 12,
+    fontSize: 11,
   },
   upcomingSection: {
     paddingHorizontal: Spacing.l,
