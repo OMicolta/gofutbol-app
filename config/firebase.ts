@@ -34,23 +34,6 @@ const getFirebaseKeys = () => {
 // Obtener la configuración de Firebase de variables de entorno
 const firebaseConfig = getFirebaseKeys();
 
-// Fallback para desarrollo en caso de que las variables no estén definidas
-if (!firebaseConfig.apiKey) {
-  console.warn(
-    "Firebase config no encontrado en variables de entorno. Usando valores por defecto para desarrollo."
-  );
-
-  // Valores por defecto para desarrollo local
-  Object.assign(firebaseConfig, {
-    apiKey: "AIzaSyBzNuU9rcWpwN7ExmC3FQh5pVY_dNgaaP4",
-    authDomain: "gofutbol-app.firebaseapp.com",
-    projectId: "gofutbol-app",
-    storageBucket: "gofutbol-app.firebasestorage.app",
-    messagingSenderId: "388240856326",
-    appId: "1:388240856326:web:4d0593449fb12bfba23a87",
-  });
-}
-
 // Inicializar Firebase solo una vez
 let app: FirebaseApp;
 let auth: Auth;
