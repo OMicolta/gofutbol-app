@@ -36,6 +36,7 @@ interface ButtonProps extends TouchableOpacityProps {
   rightIcon?: IconSymbolName;
   textStyle?: StyleProp<TextStyle>;
   buttonStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
   fullWidth?: boolean;
 }
 
@@ -50,6 +51,7 @@ export function Button({
   rightIcon,
   textStyle,
   buttonStyle,
+  style,
   fullWidth = false,
   onPress,
   ...rest
@@ -190,7 +192,9 @@ export function Button({
           variant === "filled" &&
             Platform.OS === "android" &&
             !disabled && { elevation: 2 },
+          // Aplicamos los estilos externos, dando prioridad a style sobre buttonStyle
           buttonStyle,
+          style,
         ]}
         disabled={disabled || loading}
         onPress={handlePress}
