@@ -54,48 +54,27 @@ export default function RootLayout() {
   // Determinar si hay un usuario autenticado
   const isAuthenticated = !!authStore.user;
 
+  // Importante: En lugar de renderizar componentes diferentes basados en isAuthenticated,
+  // utilizamos un enfoque más estable con un único Stack y protección de rutas en cada pantalla
   return (
     <ThemeProvider>
       <SafeAreaProvider>
         <NotificationProvider>
-          {isAuthenticated ? (
-            <AuthenticatedLayout />
-          ) : (
-            <UnauthenticatedLayout />
-          )}
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* Rutas públicas y protegidas en el mismo Stack */}
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="field/[id]" />
+            <Stack.Screen name="field/book" />
+            <Stack.Screen name="match/[id]" />
+            <Stack.Screen name="match/create" />
+            <Stack.Screen name="match/edit/[id]" />
+            <Stack.Screen name="ratings/pending" />
+            <Stack.Screen name="profile/edit" />
+          </Stack>
+          <StatusBar style="auto" />
         </NotificationProvider>
       </SafeAreaProvider>
     </ThemeProvider>
-  );
-}
-
-// Componente para usuarios autenticados - Este se renderiza DESPUÉS de que ThemeProvider esté disponible
-function AuthenticatedLayout() {
-  return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="field/[id]" />
-        <Stack.Screen name="field/book" />
-        <Stack.Screen name="match/[id]" />
-        <Stack.Screen name="match/create" />
-        <Stack.Screen name="match/edit/[id]" />
-        <Stack.Screen name="ratings/pending" />
-        <Stack.Screen name="profile/edit" />
-      </Stack>
-      <StatusBar style="auto" />
-    </>
-  );
-}
-
-// Componente para usuarios no autenticados - Este se renderiza DESPUÉS de que ThemeProvider esté disponible
-function UnauthenticatedLayout() {
-  return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </>
   );
 }

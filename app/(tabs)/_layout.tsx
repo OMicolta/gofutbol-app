@@ -1,16 +1,57 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
-import React from "react";
-import { Platform } from "react-native";
+import React, { useEffect } from "react";
+import { Platform, View, ActivityIndicator } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
+import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useAuth } from "@/hooks/useAuth";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { user, isInitializing, requireAuth } = useAuth();
+
+  // Verificar autenticación al montar el componente, pero sin redirecciones automáticas
+  // para evitar problemas de navegación prematura
+  useEffect(() => {
+    // Usamos un timeout para asegurarnos de que la redirección ocurra después del montaje
+    const checkAuth = setTimeout(() => {
+      requireAuth();
+    }, 100);
+
+    return () => clearTimeout(checkAuth);
+  }, []);
+
+  // Mostrar pantalla de carga mientras se inicializa
+  if (isInitializing) {
+    return (
+      <ThemedView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
+        <ThemedText style={{ marginTop: Spacing.m }}>Cargando...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  // Si no hay usuario después de la inicialización, requerirá autenticación en el useEffect
+  if (!user) {
+    return (
+      <ThemedView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
+        <ThemedText style={{ marginTop: Spacing.m }}>
+          Verificando sesión...
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <Tabs

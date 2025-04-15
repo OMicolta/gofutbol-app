@@ -20,12 +20,24 @@ export function useAuth() {
     }
   }, [authStore.initialized]);
 
-  // Función para redirigir al usuario según su estado de autenticación
+  // Función para verificar si el usuario está autenticado y redirigir si es necesario
+  // Con protección contra navegación prematura
   const requireAuth = () => {
-    if (!isInitializing && !authStore.user) {
-      // Solo redirigir si ya se inicializó y no hay usuario
-      router.replace("/(auth)/login");
+    if (isInitializing) {
+      // Si aún está inicializando, no hacemos nada todavía
       return false;
+    }
+
+    if (!authStore.user) {
+      // Solo redirigir si no hay usuario y ya se ha inicializado
+      try {
+        // Usamos navegación push para evitar problemas con router.replace
+        router.push("/(auth)/login");
+        return false;
+      } catch (error) {
+        console.error("Error de navegación en requireAuth:", error);
+        return false;
+      }
     }
     return true;
   };
@@ -37,13 +49,22 @@ export function useAuth() {
   };
 
   // Función para redirigir si el usuario ya está autenticado
+  // Con protección contra navegación prematura
   const redirectIfAuthenticated = (path = "/(tabs)") => {
-    if (!isInitializing && authStore.user) {
-      // Solo redirigir si ya se inicializó y hay usuario
-      setTimeout(() => {
-        router.replace(path as any);
-      }, 0);
-      return true;
+    if (isInitializing) {
+      // Si aún está inicializando, no hacemos nada todavía
+      return false;
+    }
+
+    if (authStore.user) {
+      try {
+        // Usamos navegación push para evitar problemas con router.replace
+        router.push(path as any);
+        return true;
+      } catch (error) {
+        console.error("Error de navegación en redirectIfAuthenticated:", error);
+        return false;
+      }
     }
     return false;
   };

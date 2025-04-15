@@ -67,19 +67,50 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
 
+          // Validación para prevenir inicializaciones múltiples
+          if (get().initialized) {
+            set({ isLoading: false });
+            return;
+          }
+
           // Crear una promesa que se resuelve cuando se determina el estado de autenticación
           await new Promise<void>((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-              if (user) {
-                // Usuario autenticado - obtener perfil adicional
-                const profileData = await get().fetchUserProfile(user.uid);
+            // Establecer un tiempo máximo de espera para evitar bloqueos
+            const timeoutId = setTimeout(() => {
+              console.warn("Auth initialization timeout - forcing completion");
+              set({
+                user: null,
+                profile: null,
+                isLoading: false,
+                initialized: true,
+              });
+              resolve();
+            }, 5000); // 5 segundos de timeout
 
-                set({
-                  user,
-                  profile: profileData,
-                  isLoading: false,
-                  initialized: true,
-                });
+            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+              clearTimeout(timeoutId); // Limpiar el timeout si onAuthStateChanged responde
+
+              if (user) {
+                try {
+                  // Usuario autenticado - obtener perfil adicional
+                  const profileData = await get().fetchUserProfile(user.uid);
+
+                  set({
+                    user,
+                    profile: profileData,
+                    isLoading: false,
+                    initialized: true,
+                  });
+                } catch (error) {
+                  console.error("Error fetching user profile:", error);
+                  // Continuar incluso si hay error al obtener el perfil
+                  set({
+                    user,
+                    profile: null,
+                    isLoading: false,
+                    initialized: true,
+                  });
+                }
               } else {
                 // No hay usuario autenticado
                 set({
@@ -96,10 +127,11 @@ export const useAuthStore = create<AuthState>()(
             });
           });
         } catch (error) {
+          console.error("Error during auth initialization:", error);
           set({
             isLoading: false,
             error: (error as Error).message,
-            initialized: true,
+            initialized: true, // Marcamos como inicializado incluso con error
           });
         }
       },

@@ -1,9 +1,12 @@
 // context/AuthContext.tsx
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Redirect } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
 import { useNotification } from "@/context/NotificationContext";
+import { View, ActivityIndicator } from "react-native";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { ThemedText } from "@/components/ThemedText";
 
 // Definir el tipo para el contexto de autenticación
 type AuthContextType = {
@@ -33,6 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authStore = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const { showNotification } = useNotification();
+  const colorScheme = useColorScheme();
 
   // Inicializar autenticación al montar el componente
   useEffect(() => {
@@ -52,18 +56,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // No renderizar nada hasta que la autenticación esté inicializada
   if (!isInitialized) {
-    return null; // Seguimos mostrando la splash screen mientras se inicializa
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
+        <ThemedText style={{ marginTop: 10 }}>Iniciando sesión...</ThemedText>
+      </View>
+    );
   }
 
   // Determinar si hay un usuario autenticado
   const isAuthenticated = !!authStore.user;
 
-  // Redirigir según el estado de autenticación
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
-  }
-
-  // Proporcionar el contexto a los componentes hijos
+  // Proporcionar el contexto a los componentes hijos sin redirecciones automáticas
   return (
     <AuthContext.Provider value={{ isInitialized, isAuthenticated }}>
       {children}

@@ -1,6 +1,6 @@
 // app/(auth)/login.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,18 +26,46 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { safeSignIn, error, clearError } = useAuth();
+  const {
+    safeSignIn,
+    error,
+    clearError,
+    isInitializing,
+    user,
+    redirectIfAuthenticated,
+  } = useAuth();
+
+  // Limpiar errores al montar el componente
+  useEffect(() => {
+    if (clearError) clearError();
+  }, []);
+
+  // Verificar si ya está autenticado
+  useEffect(() => {
+    // Solo intentar redireccionar después de que la autenticación se haya inicializado
+    if (!isInitializing && user) {
+      // Usamos un timeout para evitar problemas de navegación
+      const timer = setTimeout(() => {
+        redirectIfAuthenticated();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInitializing, user]);
 
   // Manejar inicio de sesión
   const handleLogin = async () => {
     setIsSubmitting(true);
     if (clearError) clearError();
 
-    // Usando el nuevo método seguro de inicio de sesión
+    // Usando el método seguro de inicio de sesión
     const success = await safeSignIn(email, password);
 
     if (success) {
-      router.replace("/(tabs)");
+      // Usamos setTimeout para evitar problemas de navegación
+      setTimeout(() => {
+        router.push("/(tabs)");
+      }, 100);
     }
 
     setIsSubmitting(false);
@@ -44,13 +73,28 @@ export default function LoginScreen() {
 
   // Manejar éxito del login con Google
   const handleGoogleSuccess = () => {
-    router.replace("/(tabs)");
+    // Usamos setTimeout para evitar problemas de navegación
+    setTimeout(() => {
+      router.push("/(tabs)");
+    }, 100);
   };
 
   // Manejar error del login con Google
   const handleGoogleError = (error: Error) => {
     // La notificación se maneja en el componente GoogleAuthButton
   };
+
+  // Mostrar indicador de carga mientras se inicializa
+  if (isInitializing) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <ThemedText style={styles.loadingText}>
+          Verificando sesión...
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -125,7 +169,7 @@ export default function LoginScreen() {
               )}
 
               <TouchableOpacity
-                onPress={() => router.push("/recover-password" as any)}
+                onPress={() => router.push("/recover-password")}
               >
                 <ThemedText type="body" style={styles.forgotPassword}>
                   ¿Olvidaste tu contraseña?
@@ -154,7 +198,7 @@ export default function LoginScreen() {
               </ThemedText>
               <TouchableOpacity
                 style={styles.registerLink}
-                onPress={() => router.push("/register" as any)}
+                onPress={() => router.push("/register")}
               >
                 <ThemedText type="body" style={styles.registerText}>
                   Regístrate
@@ -258,5 +302,13 @@ const styles = StyleSheet.create({
   registerText: {
     color: Colors.light.primary,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: Spacing.m,
   },
 });
