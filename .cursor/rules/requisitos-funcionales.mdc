@@ -1,0 +1,168 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+Requisitos Funcionales de GoFutbol
+Descripción General
+GoFutbol es una aplicación móvil desarrollada con React Native y Expo que permite a los jugadores de fútbol amateur organizar partidos, encontrar canchas disponibles, invitar amigos y administrar su reputación como jugadores. La aplicación está estructurada con una arquitectura escalable que soporta múltiples ciudades y zonas.
+Tecnologías Clave
+
+Frontend: React Native (Expo)
+Backend: Firebase (Auth, Firestore, Functions)
+Estado Global: Zustand
+Geolocalización: Google Maps SDK
+Notificaciones: Firebase Cloud Messaging
+
+Módulos Principales
+1. Autenticación y Usuarios
+
+Registro de usuarios con email/contraseña y Google
+Inicio de sesión con múltiples métodos
+Recuperación de contraseña
+Perfil de usuario con estadísticas de juego
+Cambio de tema (claro/oscuro/sistema)
+
+2. Exploración y Reserva de Canchas
+
+Mapa interactivo con canchas cercanas
+Filtros por tipo, zona, instalaciones y disponibilidad
+Detalle de canchas con fotos, reseñas y precios
+Calendarios de disponibilidad para cada cancha
+Proceso de reserva integrado o redirección a servicios externos
+
+3. Partidos y Equipos
+
+Creación de partidos definiendo fecha, hora, tipo y cancha
+Visualización de partidos (propios, abiertos, por zona)
+Unirse a partidos existentes (públicos) o por invitación (privados)
+Gestión de equipos (asignación automática o manual)
+Cambios de equipo durante la organización
+
+4. Sistema de Calificaciones
+
+Calificación de jugadores post-partido
+Criterios: asistencia, puntualidad, actitud, MVP
+Ranking de jugadores basado en calificaciones acumuladas
+Notificaciones para calificaciones pendientes
+
+5. Notificaciones y Eventos
+
+Recordatorios de partidos próximos
+Invitaciones a partidos
+Actualización de estado de partidos
+Notificaciones en app para acciones importantes
+
+Arquitectura del Estado
+Tiendas Zustand
+
+AuthStore: Gestión de autenticación y perfil de usuario
+FieldStore: Canchas, búsqueda y filtrado
+MatchStore: Gestión de partidos, equipos y participantes
+RatingStore: Sistema de calificaciones
+ThemeStore: Gestión del tema de la aplicación
+
+Estructura de Datos
+Usuarios
+User {
+  id: string;
+  name: string;
+  position?: string;
+  zone?: string;
+  profilePicUrl?: string;
+  stats: {
+    totalMatches: number;
+    attendanceRate: number;
+    punctualityAvg: number;
+    attitudeAvg: number;
+    mvpVotes: number;
+  };
+}
+
+Canchas
+Field {
+  id: string;
+  name: string;
+  location: { lat: number; lng: number };
+  zoneId: string;
+  availability: { day: string; times: string[] };
+  price: number;
+  photos: string[];
+  facilities: string[];
+  rating: number;
+  reviewCount: number;
+}
+
+
+Partidos
+Match {
+  id: string;
+  fieldId: string;
+  createdBy: string;
+  date: Timestamp;
+  time: string;
+  type: '5v5' | '6v6' | '7v7' | '11v11';
+  status: 'open' | 'full' | 'cancelled' | 'finished';
+  players: PlayerEntry[];
+  isPrivate: boolean;
+  uniformA: string;
+  uniformB: string;
+}
+
+PlayerEntry {
+  userId: string;
+  displayName: string;
+  photoURL: string | null;
+  team: 'A' | 'B' | null;
+  status: 'invited' | 'confirmed' | 'declined' | 'removed';
+  rating?: {
+    attendance: boolean;
+    punctuality: number;
+    attitude: number;
+    isMVP: boolean;
+  };
+}
+
+Interfaz de Usuario
+Sistema de Tema
+
+Soporte para tema claro y oscuro
+Configuración manual o automática (sistema)
+Persistencia de preferencias de tema
+
+Componentes Reutilizables
+
+ThemedText/ThemedView: Componentes base con soporte para temas
+Button: Botón personalizable con variantes (filled, outlined, ghost)
+Card: Tarjeta con sombras y estilos consistentes
+IconSymbol: Sistema de iconos unificado
+
+Gestión de Errores
+
+Manejo de errores de Firebase con mensajes amigables
+Sistema de notificaciones en la aplicación
+Validación de formularios en tiempo real
+
+Futuras Implementaciones
+
+Chat en tiempo real dentro de partidos
+Integraciones con pasarelas de pago para reservas de canchas
+Campeonatos y torneos organizados
+Estadísticas avanzadas por jugador y equipo
+Soporte para múltiples ciudades con gestión por zona
+
+Buenas Prácticas Implementadas
+
+Código en español para lógica de negocio
+Mensajes de error y documentación en español
+Tipado estricto con TypeScript
+Separación de preocupaciones entre UI, lógica y datos
+Hooks personalizados para encapsular funcionalidad
+Componentes reutilizables y modulares
+Manejo de estados asíncronos con indicadores de carga
