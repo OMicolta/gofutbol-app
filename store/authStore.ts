@@ -12,7 +12,7 @@ import {
   User,
   onAuthStateChanged,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 
 import { auth, db } from "@/config/firebase";
 
@@ -21,6 +21,7 @@ export interface UserProfile {
   displayName: string | null;
   email: string | null;
   photoURL: string | null;
+  username: string | null;
   position?: string;
   zone?: string;
   stats: {
@@ -45,7 +46,7 @@ interface AuthState {
     password: string,
     displayName: string
   ) => Promise<void>;
-  processGoogleCredential: (idToken: string) => Promise<void>;
+  processGoogleCredential: (idToken: string) => Promise<{ isNewUser: boolean }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -152,6 +153,7 @@ export const useAuthStore = create<AuthState>()(
               displayName: user?.displayName || null,
               email: user?.email || null,
               photoURL: user?.photoURL || null,
+              username: null, // Username null inicialmente
               stats: {
                 totalMatches: 0,
                 attendanceRate: 1, // 100% al inicio
@@ -219,12 +221,13 @@ export const useAuthStore = create<AuthState>()(
           // Actualizar perfil con displayName
           await updateProfile(userCredential.user, { displayName });
 
-          // Crear perfil en Firestore
+          // Crear perfil en Firestore (sin username aún)
           const newProfile: UserProfile = {
             uid: userCredential.user.uid,
             displayName,
             email: userCredential.user.email,
             photoURL: null,
+            username: null, // Username null inicialmente
             stats: {
               totalMatches: 0,
               attendanceRate: 1,
@@ -263,15 +266,21 @@ export const useAuthStore = create<AuthState>()(
           const userCredential = await signInWithCredential(auth, credential);
 
           // Obtener o crear perfil
-          const profileData = await get().fetchUserProfile(
+          let profileData = await get().fetchUserProfile(
             userCredential.user.uid
           );
+
+          // Si es un nuevo usuario, profileData no tendrá username
+          const isNewUser = !profileData?.username;
 
           set({
             user: userCredential.user,
             profile: profileData,
             isLoading: false,
           });
+
+          // Retornar si es un nuevo usuario para manejar el flujo de onboarding
+          return { isNewUser };
         } catch (error) {
           set({
             isLoading: false,
@@ -292,6 +301,32 @@ export const useAuthStore = create<AuthState>()(
             throw new Error("Usuario no autenticado");
           }
 
+          // Si se está actualizando el username, verificar y gestionar la colección usernames
+          if (data.username && data.username !== profile.username) {
+            // Verificar disponibilidad
+            const usernameDoc = await getDoc(
+              doc(db, "usernames", data.username)
+            );
+
+            if (usernameDoc.exists()) {
+              const usernameData = usernameDoc.data();
+              if (usernameData.uid !== user.uid) {
+                throw new Error("Este nombre de usuario ya está en uso");
+              }
+            }
+
+            // Si tenía un username anterior, eliminar la entrada antigua
+            if (profile.username) {
+              await deleteDoc(doc(db, "usernames", profile.username));
+            }
+
+            // Crear nueva entrada en la colección usernames
+            await setDoc(doc(db, "usernames", data.username), {
+              uid: user.uid,
+              createdAt: new Date(),
+            });
+          }
+
           // Actualizar displayName en Firebase Auth si se proporciona
           if (data.displayName && data.displayName !== profile.displayName) {
             await updateProfile(user, { displayName: data.displayName });
@@ -307,7 +342,9 @@ export const useAuthStore = create<AuthState>()(
             profile: updatedProfile,
             isLoading: false,
           });
+          console.log("Perfil actualizado:", updatedProfile);
         } catch (error) {
+          console.error("Error updating user profile:", error);
           set({
             isLoading: false,
             error: (error as Error).message,

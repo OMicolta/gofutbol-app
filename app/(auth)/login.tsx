@@ -33,6 +33,7 @@ export default function LoginScreen() {
     isInitializing,
     user,
     redirectIfAuthenticated,
+    needsUsernameSetup,
   } = useAuth();
 
   // Limpiar errores al montar el componente
@@ -62,21 +63,25 @@ export default function LoginScreen() {
     const success = await safeSignIn(email, password);
 
     if (success) {
-      // Usamos setTimeout para evitar problemas de navegación
-      setTimeout(() => {
+      // Verificar si necesita configurar username
+      if (needsUsernameSetup()) {
+        router.push("/setup-username");
+      } else {
         router.push("/(tabs)");
-      }, 100);
+      }
     }
 
     setIsSubmitting(false);
   };
 
   // Manejar éxito del login con Google
-  const handleGoogleSuccess = () => {
-    // Usamos setTimeout para evitar problemas de navegación
-    setTimeout(() => {
+  const handleGoogleSuccess = (result?: { isNewUser: boolean }) => {
+    // Si es un nuevo usuario o necesita configurar username, redirigir a setup-username
+    if (result?.isNewUser || needsUsernameSetup()) {
+      router.push("/setup-username");
+    } else {
       router.push("/(tabs)");
-    }, 100);
+    }
   };
 
   // Manejar error del login con Google

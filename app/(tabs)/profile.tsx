@@ -223,6 +223,10 @@ export default function ProfileScreen() {
                 <View style={styles.profileInfo}>
                   <ThemedText type="heading">{profile.displayName}</ThemedText>
 
+                  <ThemedText type="caption" secondary>
+                    @{profile.username || "sin_username"}
+                  </ThemedText>
+
                   <ThemedText type="body" secondary>
                     {profile.position || "Posición no especificada"}
                   </ThemedText>

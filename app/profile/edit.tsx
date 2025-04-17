@@ -26,6 +26,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
+import { Card } from "@/components/ui/Card";
+import { UsernameModal } from "@/components/auth/UsernameModal";
 
 // Lista de posiciones de jugador disponibles
 const POSITIONS = [
@@ -46,6 +48,7 @@ export default function EditProfileScreen() {
     error,
     clearError,
     clearAuthError,
+    safeUpdateProfile,
   } = useAuth();
   const { showNotification } = useNotification();
 
@@ -56,6 +59,7 @@ export default function EditProfileScreen() {
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [isPhotoChanged, setIsPhotoChanged] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
 
   // Estado para validación
   const [formErrors, setFormErrors] = useState<{
@@ -135,6 +139,32 @@ export default function EditProfileScreen() {
     } catch (error) {
       console.error("Error al seleccionar imagen:", error);
       showNotification("Error al seleccionar imagen", "error");
+    }
+  };
+
+  // Función para manejar la actualización del nombre de usuario
+  const handleUpdateUsername = async (username: string) => {
+    if (!user || !profile) return false;
+
+    try {
+      // Actualizar perfil con el nuevo username
+      const success = await safeUpdateProfile({
+        ...profile,
+        username,
+      });
+
+      if (success) {
+        showNotification(
+          "Nombre de usuario actualizado correctamente",
+          "success"
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error al actualizar nombre de usuario:", error);
+      showNotification(`Error: ${(error as Error).message}`, "error");
+      return false;
     }
   };
 
@@ -345,6 +375,38 @@ export default function EditProfileScreen() {
               </View>
             </View>
 
+            {/* Sección de nombre de usuario */}
+            <View style={styles.formSection}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Nombre de usuario
+              </ThemedText>
+
+              <ThemedView
+                style={styles.usernameDisplay}
+                variant="secondary"
+                rounded
+              >
+                <View style={styles.usernameRow}>
+                  <ThemedText type="body" weight="semiBold">
+                    @{profile?.username || "Sin nombre de usuario"}
+                  </ThemedText>
+                  <Button
+                    title="Cambiar"
+                    size="small"
+                    variant="ghost"
+                    onPress={() => setShowUsernameModal(true)}
+                  />
+                </View>
+                <ThemedText
+                  type="caption"
+                  secondary
+                  style={styles.usernameHint}
+                >
+                  Tu identificador único en la plataforma
+                </ThemedText>
+              </ThemedView>
+            </View>
+
             {/* Botones de acción */}
             <View style={styles.actionsContainer}>
               <Button
@@ -371,6 +433,15 @@ export default function EditProfileScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Modal para cambiar nombre de usuario */}
+      <UsernameModal
+        visible={showUsernameModal}
+        onClose={() => setShowUsernameModal(false)}
+        initialUsername={profile?.username || ""}
+        displayName={profile?.displayName || ""}
+        onUsernameSelected={handleUpdateUsername}
+      />
     </ThemedView>
   );
 }
@@ -524,5 +595,19 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.m,
+  },
+  usernameSection: {
+    marginBottom: Spacing.m,
+  },
+  usernameDisplay: {
+    padding: Spacing.m,
+  },
+  usernameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  usernameHint: {
+    marginTop: Spacing.xs,
   },
 });

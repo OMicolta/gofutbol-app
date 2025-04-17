@@ -24,15 +24,21 @@ export function useAuth() {
   // Con protección contra navegación prematura
   const requireAuth = () => {
     if (isInitializing) {
-      // Si aún está inicializando, no hacemos nada todavía
       return false;
     }
 
     if (!authStore.user) {
-      // Solo redirigir si no hay usuario y ya se ha inicializado
       try {
-        // Usamos navegación push para evitar problemas con router.replace
         router.push("/(auth)/login");
+        return false;
+      } catch (error) {
+        console.error("Error de navegación en requireAuth:", error);
+        return false;
+      }
+    } else if (needsUsernameSetup()) {
+      // Si el usuario necesita configurar username, redirigir a esa pantalla
+      try {
+        router.push("/setup-username");
         return false;
       } catch (error) {
         console.error("Error de navegación en requireAuth:", error);
@@ -48,22 +54,40 @@ export function useAuth() {
     return !!authStore.user;
   };
 
+  const needsUsernameSetup = () => {
+    return (
+      !!authStore.user &&
+      (!authStore.profile?.username || authStore.profile.username === "")
+    );
+  };
+
   // Función para redirigir si el usuario ya está autenticado
   // Con protección contra navegación prematura
   const redirectIfAuthenticated = (path = "/(tabs)") => {
     if (isInitializing) {
-      // Si aún está inicializando, no hacemos nada todavía
       return false;
     }
 
     if (authStore.user) {
-      try {
-        // Usamos navegación push para evitar problemas con router.replace
-        router.push(path as any);
-        return true;
-      } catch (error) {
-        console.error("Error de navegación en redirectIfAuthenticated:", error);
-        return false;
+      // Si el usuario necesita configurar username, redirigir a esa pantalla
+      if (needsUsernameSetup()) {
+        try {
+          // Usamos navegación push para evitar problemas con router.replace
+          router.push("/setup-username" as any);
+          return true;
+        } catch (error) {
+          console.error("Error de navegación:", error);
+          return false;
+        }
+      } else {
+        try {
+          // Usamos navegación push para evitar problemas con router.replace
+          router.push(path as any);
+          return true;
+        } catch (error) {
+          console.error("Error de navegación:", error);
+          return false;
+        }
       }
     }
     return false;
@@ -164,5 +188,6 @@ export function useAuth() {
     safeSignUp,
     safeUpdateProfile,
     clearAuthError,
+    needsUsernameSetup,
   };
 }

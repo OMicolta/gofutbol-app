@@ -56,8 +56,11 @@ export default function RegisterScreen() {
     const success = await safeSignUp(email, password, name);
 
     if (success) {
-      showNotification("¡Registro exitoso! Bienvenido a GoFutbol", "success");
-      router.replace("/(tabs)");
+      showNotification(
+        "¡Registro exitoso! Ahora configura tu nombre de usuario",
+        "success"
+      );
+      router.replace("/setup-username");
     }
 
     setIsSubmitting(false);

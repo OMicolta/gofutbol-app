@@ -1,20 +1,14 @@
 // components/auth/GoogleAuthButton.tsx
 import React, { useState, useEffect } from "react";
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { StyleSheet } from "react-native";
 import * as Google from "expo-auth-session/providers/google";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/Button";
-import { Colors, Spacing } from "@/constants/Colors";
+import { Spacing } from "@/constants/Colors";
 
 interface GoogleAuthButtonProps {
   text?: string;
-  onSuccess?: () => void;
+  onSuccess?: (result?: { isNewUser: boolean }) => void;
   onError?: (error: Error) => void;
 }
 
@@ -48,9 +42,9 @@ export function GoogleAuthButton({
   const handleGoogleAuth = async (idToken: string) => {
     try {
       // Procesar token con Firebase
-      await processGoogleCredential(idToken);
+      const result = await processGoogleCredential(idToken);
       setIsAuthenticating(false);
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(result);
     } catch (error) {
       setIsAuthenticating(false);
       if (onError) onError(error as Error);

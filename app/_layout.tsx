@@ -63,6 +63,10 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             {/* Rutas públicas y protegidas en el mismo Stack */}
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="setup-username"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="field/[id]" />
             <Stack.Screen name="field/book" />
