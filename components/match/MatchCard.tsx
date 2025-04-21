@@ -23,6 +23,7 @@ interface MatchCardProps {
   onJoin?: () => void;
   onLeave?: () => void;
   mode?: "full" | "compact";
+  isHistorical?: boolean;
 }
 
 export function MatchCard({
@@ -31,6 +32,7 @@ export function MatchCard({
   onJoin,
   onLeave,
   mode = "full",
+  isHistorical = false,
 }: MatchCardProps) {
   const { user } = useAuth();
   const { joinMatch, leaveMatch } = useMatches();
@@ -65,6 +67,13 @@ export function MatchCard({
   ).length;
   const availableSpots = match.maxPlayers - confirmedPlayers;
 
+  // Obtener resultado del partido si es histórico
+  const getTeamCount = (team: "A" | "B") => {
+    return match.players.filter(
+      (p) => p.team === team && p.status === "confirmed"
+    ).length;
+  };
+
   // Determinar si el partido es hoy
   const isToday = () => {
     const today = new Date();
@@ -88,7 +97,9 @@ export function MatchCard({
 
   // Formatear fecha relativa
   const getRelativeDate = () => {
-    if (isToday()) {
+    if (isHistorical) {
+      return formattedDate; // Para partidos históricos siempre mostrar la fecha completa
+    } else if (isToday()) {
       return "Hoy";
     } else if (isTomorrow()) {
       return "Mañana";
@@ -102,7 +113,14 @@ export function MatchCard({
     if (onPress) {
       onPress();
     } else {
-      router.push(`/match/${match.id}` as any);
+      if (isHistorical) {
+        router.push({
+          pathname: `/match/[id]` as const,
+          params: { id: match.id, isHistorical: "true" },
+        });
+      } else {
+        router.push(`/match/${match.id}` as any);
+      }
     }
   };
 
@@ -136,6 +154,27 @@ export function MatchCard({
     }
   };
 
+  // Renderizar el MVP si existe
+  const renderMVP = () => {
+    if (!isHistorical) return null;
+
+    const mvpPlayer = match.players.find((p) => p.rating?.isMVP);
+    if (!mvpPlayer) return null;
+
+    return (
+      <View style={styles.mvpContainer}>
+        <IconSymbol
+          name="star.fill"
+          size={14}
+          color={Colors[colorScheme].warning}
+        />
+        <ThemedText style={styles.mvpText}>
+          MVP: {mvpPlayer.displayName}
+        </ThemedText>
+      </View>
+    );
+  };
+
   // Renderizar versión compacta
   if (mode === "compact") {
     return (
@@ -157,13 +196,22 @@ export function MatchCard({
                   {formattedTime}
                 </ThemedText>
               </View>
-              <ThemedView
-                style={styles.typeBadge}
-                rounded="s"
-                variant="secondary"
-              >
-                <ThemedText style={styles.typeText}>{match.type}</ThemedText>
-              </ThemedView>
+
+              <View style={styles.compactBadges}>
+                <ThemedView
+                  style={styles.typeBadge}
+                  rounded="s"
+                  variant="secondary"
+                >
+                  <ThemedText style={styles.typeText}>{match.type}</ThemedText>
+                </ThemedView>
+
+                {isCreator && (
+                  <ThemedView style={styles.miniCreatorBadge} rounded>
+                    <ThemedText style={styles.miniCreatorText}>C</ThemedText>
+                  </ThemedView>
+                )}
+              </View>
             </View>
 
             <ThemedText
@@ -175,54 +223,86 @@ export function MatchCard({
               {match.fieldName || "Ubicación por definir"}
             </ThemedText>
 
-            <View style={styles.playerInfo}>
-              <View style={styles.playerBar}>
-                <View
-                  style={[
-                    styles.playerProgress,
-                    {
-                      width: `${(confirmedPlayers / match.maxPlayers) * 100}%`,
-                      backgroundColor:
-                        confirmedPlayers >= match.maxPlayers / 2
-                          ? Colors[colorScheme].success
-                          : Colors[colorScheme].warning,
-                    },
-                  ]}
-                />
-              </View>
-              <View style={styles.playerStatusRow}>
-                <ThemedText type="caption" secondary>
-                  {confirmedPlayers}/{match.maxPlayers} jugadores
-                </ThemedText>
-                {availableSpots > 0 && (
-                  <ThemedText
-                    type="caption"
-                    style={availableSpots <= 2 ? styles.urgentSpots : undefined}
-                  >
-                    {availableSpots} {availableSpots === 1 ? "cupo" : "cupos"}
+            {isHistorical ? (
+              <View style={styles.historicalCompactRow}>
+                <View style={styles.miniTeamsContainer}>
+                  <ThemedText style={styles.miniTeamCount}>
+                    {getTeamCount("A")}
                   </ThemedText>
-                )}
+                  <ThemedText style={styles.miniVsText}>vs</ThemedText>
+                  <ThemedText style={styles.miniTeamCount}>
+                    {getTeamCount("B")}
+                  </ThemedText>
+                </View>
+
+                <View style={styles.finishedBadge}>
+                  <ThemedText style={styles.finishedText}>
+                    Finalizado
+                  </ThemedText>
+                </View>
               </View>
-            </View>
+            ) : (
+              <View style={styles.playerInfo}>
+                <View style={styles.playerBar}>
+                  <View
+                    style={[
+                      styles.playerProgress,
+                      {
+                        width: `${
+                          (confirmedPlayers / match.maxPlayers) * 100
+                        }%`,
+                        backgroundColor:
+                          confirmedPlayers >= match.maxPlayers / 2
+                            ? Colors[colorScheme].success
+                            : Colors[colorScheme].warning,
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.playerStatusRow}>
+                  <ThemedText type="caption" secondary>
+                    {confirmedPlayers}/{match.maxPlayers} jugadores
+                  </ThemedText>
+                  {availableSpots > 0 && !isHistorical && (
+                    <ThemedText
+                      type="caption"
+                      style={
+                        availableSpots <= 2 ? styles.urgentSpots : undefined
+                      }
+                    >
+                      {availableSpots} {availableSpots === 1 ? "cupo" : "cupos"}
+                    </ThemedText>
+                  )}
+                </View>
+              </View>
+            )}
           </View>
 
-          {!isPlayerConfirmed && !isCreator ? (
-            <Button
-              title="Unirme"
-              size="small"
-              onPress={handleJoin}
-              disabled={match.status === "full" || match.status === "cancelled"}
-            />
-          ) : (
-            <ThemedView
-              style={isCreator ? styles.organizerBadge : styles.confirmedBadge}
-              rounded
-            >
-              <ThemedText type="caption" style={styles.statusText}>
-                {isCreator ? "Organizador" : "Confirmado"}
-              </ThemedText>
-            </ThemedView>
+          {!isHistorical && (
+            <View style={styles.actionsContainer}>
+              {isPlayerConfirmed ? (
+                <Button
+                  variant="ghost"
+                  color="danger"
+                  size="small"
+                  title="Salir"
+                  onPress={handleLeave}
+                  style={styles.compactButton}
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="small"
+                  title="Unirme"
+                  onPress={handleJoin}
+                  style={styles.compactButton}
+                  disabled={match.status === "full" || availableSpots <= 0}
+                />
+              )}
+            </View>
           )}
+
+          {isHistorical && renderMVP()}
         </View>
       </Card>
     );
@@ -231,178 +311,150 @@ export function MatchCard({
   // Renderizar versión completa
   return (
     <Card onPress={handlePress} style={styles.card} shadow="s">
-      <View style={styles.header}>
-        <View style={styles.dateContainer}>
+      {/* Encabezado de la tarjeta */}
+      <View style={styles.cardHeader}>
+        <View style={styles.dateTimeContainer}>
           <ThemedView style={styles.dateChip} rounded variant="secondary">
             <ThemedText style={styles.dateChipText} weight="semiBold">
               {getRelativeDate()}
             </ThemedText>
           </ThemedView>
-          <ThemedText type="body" weight="semiBold" style={styles.timeText}>
+          <ThemedText style={styles.timeText} weight="semiBold">
             {formattedTime}
           </ThemedText>
         </View>
 
-        <View style={styles.typeAndStatus}>
+        <View style={styles.badgesContainer}>
           <ThemedView style={styles.typeBadge} rounded="s" variant="secondary">
             <ThemedText style={styles.typeText}>{match.type}</ThemedText>
           </ThemedView>
 
-          {match.status === "cancelled" && (
-            <ThemedView style={styles.cancelledBadge} rounded="s">
-              <ThemedText style={styles.cancelledText}>Cancelado</ThemedText>
-            </ThemedView>
-          )}
-
-          {match.status === "full" && !isPlayerConfirmed && !isCreator && (
-            <ThemedView style={styles.fullBadge} rounded="s">
-              <ThemedText style={styles.fullText}>Completo</ThemedText>
+          {isHistorical && (
+            <ThemedView style={styles.historicalBadge} rounded>
+              <ThemedText style={styles.historicalText}>Finalizado</ThemedText>
             </ThemedView>
           )}
         </View>
       </View>
 
-      <View style={styles.content}>
-        <ThemedText type="body" weight="semiBold">
+      {/* Etiqueta de creador si aplica */}
+      {isCreator && (
+        <View style={styles.creatorContainer}>
+          <ThemedView style={styles.creatorBadge} rounded>
+            <ThemedText style={styles.creatorText}>Creador</ThemedText>
+          </ThemedView>
+        </View>
+      )}
+
+      {/* Información de la ubicación */}
+      <View style={styles.locationContainer}>
+        <ThemedText
+          type="body"
+          weight="semiBold"
+          numberOfLines={1}
+          style={styles.fieldName}
+        >
           {match.fieldName || "Ubicación por definir"}
         </ThemedText>
 
         {match.address && (
-          <ThemedText type="caption" secondary>
+          <ThemedText
+            type="caption"
+            secondary
+            numberOfLines={1}
+            style={styles.address}
+          >
             {match.address}
           </ThemedText>
         )}
+      </View>
 
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <IconSymbol
-              name="person.fill"
-              size={16}
-              color={Colors[colorScheme].textSecondary}
-              style={styles.infoIcon}
-            />
-            <ThemedText type="caption" secondary>
-              {match.creatorName}
-            </ThemedText>
-          </View>
-
-          <View style={styles.infoItem}>
-            <ThemedText type="caption" secondary>
-              Nivel:{" "}
-              {match.level === "beginner"
-                ? "Principiante"
-                : match.level === "intermediate"
-                ? "Intermedio"
-                : match.level === "advanced"
-                ? "Avanzado"
-                : "Todos"}
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.playerSection}>
-          <View style={styles.playerBar}>
-            <View
-              style={[
-                styles.playerProgress,
-                {
-                  width: `${(confirmedPlayers / match.maxPlayers) * 100}%`,
-                  backgroundColor:
-                    confirmedPlayers >= match.maxPlayers / 2
-                      ? Colors[colorScheme].success
-                      : Colors[colorScheme].warning,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={styles.playerText}>
-            <ThemedText type="caption" secondary>
-              {confirmedPlayers}/{match.maxPlayers} jugadores
-            </ThemedText>
-
-            {availableSpots > 0 && match.status !== "cancelled" && (
-              <ThemedText
-                type="caption"
-                style={availableSpots <= 2 ? styles.urgentSpots : undefined}
-              >
-                {availableSpots} {availableSpots === 1 ? "cupo" : "cupos"}{" "}
-                disponible{availableSpots !== 1 ? "s" : ""}
+      {/* Información adicional para partidos históricos */}
+      {isHistorical && (
+        <View style={styles.historicalInfoContainer}>
+          <View style={styles.teamsScoreContainer}>
+            <View style={styles.teamScoreBox}>
+              <ThemedText style={styles.teamLabel}>
+                Equipo {match.uniformA || "A"}
               </ThemedText>
-            )}
+              <ThemedText style={styles.teamCount}>
+                {getTeamCount("A")}
+              </ThemedText>
+            </View>
+            <ThemedText style={styles.vsText}>vs</ThemedText>
+            <View style={styles.teamScoreBox}>
+              <ThemedText style={styles.teamLabel}>
+                Equipo {match.uniformB || "B"}
+              </ThemedText>
+              <ThemedText style={styles.teamCount}>
+                {getTeamCount("B")}
+              </ThemedText>
+            </View>
           </View>
+          {renderMVP()}
+        </View>
+      )}
+
+      {/* Información de jugadores */}
+      <View style={styles.playersContainer}>
+        <View style={styles.playerBar}>
+          <View
+            style={[
+              styles.playerProgress,
+              {
+                width: `${(confirmedPlayers / match.maxPlayers) * 100}%`,
+                backgroundColor:
+                  confirmedPlayers >= match.maxPlayers / 2
+                    ? Colors[colorScheme].success
+                    : Colors[colorScheme].warning,
+              },
+            ]}
+          />
         </View>
 
-        {/* Mostrar avatares de algunos jugadores */}
-        {confirmedPlayers > 0 && (
-          <View style={styles.avatarsRow}>
-            {match.players
-              .filter((player) => player.status === "confirmed")
-              .slice(0, 4)
-              .map((player, index) => (
-                <View
-                  key={player.userId}
-                  style={[styles.avatarContainer, { zIndex: 5 - index }]}
-                >
-                  {player.photoURL ? (
-                    <Image
-                      source={{ uri: player.photoURL }}
-                      style={styles.avatar}
-                    />
-                  ) : (
-                    <ThemedView style={styles.avatarFallback} rounded>
-                      <ThemedText style={styles.avatarText}>
-                        {player.displayName.substring(0, 1).toUpperCase()}
-                      </ThemedText>
-                    </ThemedView>
-                  )}
-                </View>
-              ))}
+        <View style={styles.playerInfo}>
+          <ThemedText type="caption" secondary>
+            {confirmedPlayers}/{match.maxPlayers} jugadores confirmados
+          </ThemedText>
 
-            {confirmedPlayers > 4 && (
-              <ThemedView style={styles.moreAvatars} rounded>
-                <ThemedText style={styles.moreAvatarsText}>
-                  +{confirmedPlayers - 4}
-                </ThemedText>
-              </ThemedView>
-            )}
-          </View>
-        )}
+          {!isHistorical && availableSpots > 0 && (
+            <ThemedText
+              type="caption"
+              style={availableSpots <= 2 ? styles.urgentSpots : undefined}
+            >
+              {availableSpots} {availableSpots === 1 ? "lugar" : "lugares"}{" "}
+              {availableSpots <= 2 ? "¡Úrgente!" : "disponibles"}
+            </ThemedText>
+          )}
+        </View>
       </View>
 
-      <View style={styles.footer}>
-        {isCreator ? (
-          <ThemedView style={styles.organizerBadge} rounded="s">
-            <IconSymbol name="checkmark" size={16} color="white" />
-            <ThemedText style={styles.organizerText}>Organizador</ThemedText>
-          </ThemedView>
-        ) : isPlayerConfirmed ? (
-          <View style={styles.buttonContainer}>
-            <ThemedView style={styles.confirmedBadge} rounded="s">
-              <IconSymbol name="checkmark" size={16} color="white" />
-              <ThemedText style={styles.confirmedText}>Confirmado</ThemedText>
-            </ThemedView>
-
-            {match.status !== "cancelled" && (
-              <Button
-                title="Cancelar"
-                size="small"
-                variant="outlined"
-                color="danger"
-                onPress={handleLeave}
-              />
-            )}
-          </View>
-        ) : (
-          <Button
-            title="Unirme"
-            size="small"
-            leftIcon="plus"
-            onPress={handleJoin}
-            disabled={match.status === "full" || match.status === "cancelled"}
-          />
-        )}
-      </View>
+      {/* Botones de acción */}
+      {!isHistorical && (
+        <View style={styles.actionsContainer}>
+          {isPlayerConfirmed ? (
+            <Button
+              title="Salir del partido"
+              variant="outlined"
+              color="danger"
+              size="small"
+              onPress={handleLeave}
+            />
+          ) : (
+            <Button
+              title="Unirme al partido"
+              size="small"
+              onPress={handleJoin}
+              disabled={match.status === "full" || availableSpots <= 0}
+              leftIcon={
+                match.status === "full" || availableSpots <= 0
+                  ? undefined
+                  : "plus"
+              }
+            />
+          )}
+        </View>
+      )}
     </Card>
   );
 }
@@ -411,15 +463,24 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: Spacing.m,
   },
-  header: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.s,
   },
-  dateContainer: {
+  dateTimeContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+  },
+  badgesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  creatorContainer: {
+    marginBottom: Spacing.s,
   },
   dateChip: {
     backgroundColor: Colors.light.primary + "20",
@@ -435,11 +496,6 @@ const styles = StyleSheet.create({
   timeText: {
     marginLeft: Spacing.xs,
   },
-  typeAndStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
   typeBadge: {
     backgroundColor: Colors.light.primary + "20",
     paddingHorizontal: Spacing.s,
@@ -450,43 +506,59 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.semiBold,
     fontSize: Typography.fontSizes.s,
   },
-  cancelledBadge: {
-    backgroundColor: Colors.light.danger + "20",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-  },
-  cancelledText: {
-    color: Colors.light.danger,
-    fontWeight: Typography.fontWeights.semiBold,
-    fontSize: Typography.fontSizes.s,
-  },
-  fullBadge: {
-    backgroundColor: Colors.light.warning + "20",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs / 2,
-  },
-  fullText: {
-    color: Colors.light.warning,
-    fontWeight: Typography.fontWeights.semiBold,
-    fontSize: Typography.fontSizes.s,
-  },
-  content: {
+  locationContainer: {
     marginBottom: Spacing.m,
   },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: Spacing.xs,
+  fieldName: {
+    marginBottom: Spacing.xs,
   },
-  infoItem: {
+  address: {
+    marginBottom: Spacing.xs,
+  },
+  historicalInfoContainer: {
+    marginBottom: Spacing.m,
+    borderRadius: Shape.radius.s,
+    backgroundColor: Colors.light.backgroundSecondary,
+    padding: Spacing.s,
+  },
+  teamsScoreContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginBottom: Spacing.s,
+  },
+  teamScoreBox: {
+    alignItems: "center",
+    padding: Spacing.s,
+  },
+  teamLabel: {
+    fontSize: Typography.fontSizes.s,
+    fontWeight: Typography.fontWeights.semiBold,
+    marginBottom: Spacing.xs / 2,
+  },
+  teamCount: {
+    fontSize: Typography.fontSizes.l,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  vsText: {
+    fontSize: Typography.fontSizes.m,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.light.textSecondary,
+  },
+  mvpContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: Spacing.xs,
   },
-  infoIcon: {
-    marginRight: Spacing.xs,
+  mvpText: {
+    fontSize: Typography.fontSizes.s,
+    fontWeight: Typography.fontWeights.semiBold,
+    color: Colors.light.warning,
+    marginLeft: Spacing.xs,
   },
-  playerSection: {
-    marginTop: Spacing.m,
+  playersContainer: {
+    marginBottom: Spacing.m,
   },
   playerBar: {
     height: 8,
@@ -499,92 +571,36 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: Shape.radius.xs,
   },
-  playerText: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  playerInfo: {
+    marginTop: Spacing.xs,
   },
-  avatarsRow: {
-    flexDirection: "row",
-    marginTop: Spacing.m,
-    height: 32,
-  },
-  avatarContainer: {
-    marginRight: -8,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  avatarFallback: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.light.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  avatarText: {
-    color: "white",
-    fontWeight: Typography.fontWeights.bold,
-    fontSize: Typography.fontSizes.s,
-  },
-  moreAvatars: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.light.textSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  moreAvatarsText: {
-    color: "white",
-    fontWeight: Typography.fontWeights.bold,
-    fontSize: Typography.fontSizes.xs,
-  },
-  footer: {
+  actionsContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
   },
-  buttonContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.s,
-  },
-  organizerBadge: {
+  creatorBadge: {
     backgroundColor: Colors.light.primary,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.xs / 2,
     gap: Spacing.xs,
   },
-  organizerText: {
+  creatorText: {
     color: "white",
     fontWeight: Typography.fontWeights.semiBold,
   },
-  confirmedBadge: {
-    backgroundColor: Colors.light.success,
-    flexDirection: "row",
-    alignItems: "center",
+  historicalBadge: {
+    backgroundColor: Colors.light.danger + "20",
     paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: Shape.radius.s,
   },
-  confirmedText: {
-    color: "white",
+  historicalText: {
+    color: Colors.light.danger,
     fontWeight: Typography.fontWeights.semiBold,
-  },
-  statusText: {
-    color: "white",
-    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
   },
   urgentSpots: {
     color: Colors.light.warning,
@@ -608,6 +624,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.xs,
   },
+  compactBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
   dateTimeInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -615,12 +636,61 @@ const styles = StyleSheet.create({
   locationText: {
     marginBottom: Spacing.xs,
   },
-  playerInfo: {
-    marginTop: Spacing.xs,
-  },
   playerStatusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  finishedBadge: {
+    backgroundColor: Colors.light.danger + "20",
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: Shape.radius.s,
+    marginBottom: Spacing.xs,
+  },
+  finishedText: {
+    color: Colors.light.danger,
+    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
+  },
+  compactButton: {
+    marginHorizontal: 0,
+  },
+  historicalCompactInfo: {
+    alignItems: "flex-end",
+  },
+  miniCreatorBadge: {
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: Shape.radius.round,
+    width: 22,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniCreatorText: {
+    color: "white",
+    fontWeight: Typography.fontWeights.bold,
+    fontSize: Typography.fontSizes.xs,
+  },
+  historicalCompactRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: Spacing.xs,
+  },
+  miniTeamsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  miniTeamCount: {
+    fontSize: Typography.fontSizes.m,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  miniVsText: {
+    fontSize: Typography.fontSizes.s,
+    color: Colors.light.textSecondary,
   },
 });

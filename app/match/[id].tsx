@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/Card";
 import { PlayerList } from "@/components/match/PlayerList";
 import { RatingForm } from "@/components/match/RatingForm";
 import { useMatches } from "@/hooks/useMatches";
+import { useHistoricalMatches } from "@/hooks/useHistoricalMatches";
 import { useAuth } from "@/hooks/useAuth";
 import { Match, PlayerEntry, TeamType } from "@/store/matchStore";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
@@ -34,7 +35,10 @@ import { InvitePlayersModal } from "@/components/match/InvitePlayersModal";
 import { InvitedPlayersList } from "@/components/match/InvitedPlayersList";
 
 export default function MatchDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, isHistorical } = useLocalSearchParams<{
+    id: string;
+    isHistorical?: string;
+  }>();
   const colorScheme = useColorScheme();
   const { user } = useAuth();
   const {
@@ -42,13 +46,27 @@ export default function MatchDetailScreen() {
     joinMatch,
     leaveMatch,
     changeTeam,
-    isLoading,
-    error,
+    isLoading: isCurrentLoading,
+    error: currentError,
   } = useMatches();
+
+  const {
+    getHistoricalMatchById,
+    isLoading: isHistoricalLoading,
+    error: historicalError,
+  } = useHistoricalMatches();
+
   const { showNotification } = useNotification();
 
   const [match, setMatch] = useState<Match | null>(null);
   const [showRatingForm, setShowRatingForm] = useState(false);
+
+  // Determinar si se está viendo un partido histórico
+  const isHistoricalMatch = isHistorical === "true";
+
+  // Estado combinado para carga y errores
+  const isLoading = isCurrentLoading || isHistoricalLoading;
+  const error = currentError || historicalError;
 
   //Añadir estado para controlar el modal de invitaciones
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -60,13 +78,20 @@ export default function MatchDetailScreen() {
   useEffect(() => {
     const loadMatch = async () => {
       if (id) {
-        const matchData = await getMatchDetails(id);
-        setMatch(matchData);
+        if (isHistoricalMatch) {
+          // Cargar partido histórico
+          const matchData = await getHistoricalMatchById(id);
+          setMatch(matchData);
+        } else {
+          // Cargar partido actual
+          const matchData = await getMatchDetails(id);
+          setMatch(matchData);
+        }
       }
     };
 
     loadMatch();
-  }, [id]);
+  }, [id, isHistoricalMatch]);
 
   // Al cargar los datos del partido, actualizar las listas de jugadores
   useEffect(() => {
@@ -98,13 +123,13 @@ export default function MatchDetailScreen() {
 
   // Verificar si el partido ya pasó
   const isMatchPast = match
-    ? new Date(match.date.toDate()) < new Date()
+    ? new Date(match.date.toDate()) < new Date() || isHistoricalMatch
     : false;
 
   // Manejar unirse al partido
   const handleJoin = async () => {
     try {
-      if (!match) return;
+      if (!match || isHistoricalMatch) return;
       await joinMatch(match.id);
       showNotification("¡Te has unido al partido correctamente!", "success");
 
@@ -120,7 +145,7 @@ export default function MatchDetailScreen() {
   // Manejar abandonar el partido
   const handleLeave = async () => {
     try {
-      if (!match) return;
+      if (!match || isHistoricalMatch) return;
 
       Alert.alert(
         "Abandonar partido",
@@ -156,7 +181,7 @@ export default function MatchDetailScreen() {
   // Manejar cambio de equipo
   const handleChangeTeam = async (playerId: string, newTeam: TeamType) => {
     try {
-      if (!match || !user) return;
+      if (!match || !user || isHistoricalMatch) return;
 
       // Solo permitir cambiar el propio equipo o si eres el creador
       if (playerId !== user.uid && match.createdBy !== user.uid) {
@@ -181,7 +206,8 @@ export default function MatchDetailScreen() {
   // Manejar eliminación de jugador (para el creador)
   const handleRemovePlayer = async (playerId: string) => {
     try {
-      if (!match || !user || match.createdBy !== user.uid) return;
+      if (!match || !user || match.createdBy !== user.uid || isHistoricalMatch)
+        return;
 
       Alert.alert(
         "Remover jugador",

@@ -22,12 +22,13 @@ import { MatchCard } from "@/components/match/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useMatches } from "@/hooks/useMatches";
+import { useHistoricalMatches } from "@/hooks/useHistoricalMatches";
 import { useAuth } from "@/hooks/useAuth";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
 
-type TabType = "myMatches" | "openMatches";
+type TabType = "myMatches" | "openMatches" | "history";
 
 export default function MatchesScreen() {
   const colorScheme = useColorScheme();
@@ -45,6 +46,16 @@ export default function MatchesScreen() {
     indexError,
     retryLoadAfterIndexError,
   } = useMatches();
+
+  const {
+    historicalMatches,
+    myHistoricalMatches,
+    myCreatedHistoricalMatches,
+    fetchHistoricalMatches,
+    isLoading: isHistoricalLoading,
+    error: historicalError,
+  } = useHistoricalMatches();
+
   const { showNotification } = useNotification();
 
   const [activeTab, setActiveTab] = useState<TabType>("myMatches");
@@ -68,6 +79,9 @@ export default function MatchesScreen() {
       if (user) {
         // Actualizar partidos en segundo plano
         fetchMatches(user.uid, true);
+
+        // También cargamos los partidos históricos
+        fetchHistoricalMatches(true);
       }
     }, [user])
   );
@@ -78,6 +92,7 @@ export default function MatchesScreen() {
 
     try {
       await fetchMatches(user.uid, true);
+      await fetchHistoricalMatches(true);
     } catch (error) {
       console.error("Error al cargar partidos:", error);
       showNotification("Error al cargar partidos. Intenta de nuevo.", "error");
@@ -131,10 +146,11 @@ export default function MatchesScreen() {
     if (tab === "myMatches") {
       // Combinar mis partidos creados y aquellos en los que participo
       setFilters({ onlyMine: true, onlyJoined: true });
-    } else {
+    } else if (tab === "openMatches") {
       // Mostrar todos los partidos abiertos (resetear filtros)
       resetFilters();
     }
+    // No necesitamos setear filtros para "history" ya que usa otro hook
   };
 
   // Manejar refresh
@@ -142,7 +158,13 @@ export default function MatchesScreen() {
     if (!user) return;
 
     setRefreshing(true);
-    await fetchMatches(user.uid, true);
+
+    if (activeTab === "history") {
+      await fetchHistoricalMatches(true);
+    } else {
+      await fetchMatches(user.uid, true);
+    }
+
     setRefreshing(false);
   };
 
@@ -161,9 +183,19 @@ export default function MatchesScreen() {
           (match) => !myCreatedMatches.some((m) => m.id === match.id)
         ),
       ];
-    } else {
+    } else if (activeTab === "openMatches") {
       return filteredMatches;
+    } else if (activeTab === "history") {
+      // Combinar partidos históricos creados y en los que participé
+      return [
+        ...myCreatedHistoricalMatches,
+        ...myHistoricalMatches.filter(
+          (match) => !myCreatedHistoricalMatches.some((m) => m.id === match.id)
+        ),
+      ];
     }
+
+    return [];
   };
 
   // Contenido específico para error de índice de Firebase
@@ -199,6 +231,12 @@ export default function MatchesScreen() {
       </View>
     );
   };
+
+  const isLoadingContent =
+    isLoading &&
+    (activeTab !== "history" ||
+      (activeTab === "history" && isHistoricalLoading));
+  const currentError = activeTab === "history" ? historicalError : error;
 
   return (
     <ThemedView style={styles.container}>
@@ -253,13 +291,30 @@ export default function MatchesScreen() {
                 activeTab === "openMatches" && styles.activeTabText,
               ]}
             >
-              Partidos Abiertos
+              Abiertos
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "history" && styles.activeTabButton,
+            ]}
+            onPress={() => handleTabChange("history")}
+          >
+            <ThemedText
+              style={[
+                styles.tabText,
+                activeTab === "history" && styles.activeTabText,
+              ]}
+            >
+              Historial
             </ThemedText>
           </TouchableOpacity>
         </View>
 
         {/* Lista de partidos */}
-        {isLoading && matches.length === 0 ? (
+        {isLoadingContent && getDisplayMatches().length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator
               size="large"
@@ -269,14 +324,14 @@ export default function MatchesScreen() {
               Cargando partidos...
             </ThemedText>
           </View>
-        ) : indexError ? (
+        ) : indexError && activeTab !== "history" ? (
           renderIndexErrorContent()
-        ) : error ? (
+        ) : currentError ? (
           <View style={styles.errorContainer}>
             <ThemedText type="subtitle" style={styles.errorTitle}>
               Error al cargar partidos
             </ThemedText>
-            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <ThemedText style={styles.errorText}>{currentError}</ThemedText>
             <Button
               title="Reintentar"
               onPress={loadData}
@@ -297,7 +352,9 @@ export default function MatchesScreen() {
                 <ThemedText type="body" secondary style={styles.emptyText}>
                   {activeTab === "myMatches"
                     ? "No tienes partidos. ¡Crea uno o únete a partidos existentes!"
-                    : "No hay partidos disponibles en este momento."}
+                    : activeTab === "openMatches"
+                    ? "No hay partidos disponibles en este momento."
+                    : "No tienes partidos en tu historial."}
                 </ThemedText>
                 {activeTab === "myMatches" ? (
                   <Button
@@ -316,7 +373,9 @@ export default function MatchesScreen() {
                 )}
               </View>
             }
-            renderItem={({ item }) => <MatchCard match={item} />}
+            renderItem={({ item }) => (
+              <MatchCard match={item} isHistorical={activeTab === "history"} />
+            )}
           />
         )}
       </SafeAreaView>
