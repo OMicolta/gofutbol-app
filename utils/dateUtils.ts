@@ -1,3 +1,4 @@
+// utils/dateUtils.ts
 /**
  * Formatea una fecha en español
  * @param date Fecha a formatear
