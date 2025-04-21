@@ -26,10 +26,12 @@ import { PlayerList } from "@/components/match/PlayerList";
 import { RatingForm } from "@/components/match/RatingForm";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
-import { Match, TeamType } from "@/store/matchStore";
+import { Match, PlayerEntry, TeamType } from "@/store/matchStore";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
+import { InvitePlayersModal } from "@/components/match/InvitePlayersModal";
+import { InvitedPlayersList } from "@/components/match/InvitedPlayersList";
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,6 +50,13 @@ export default function MatchDetailScreen() {
   const [match, setMatch] = useState<Match | null>(null);
   const [showRatingForm, setShowRatingForm] = useState(false);
 
+  //Añadir estado para controlar el modal de invitaciones
+  const [showInviteModal, setShowInviteModal] = useState(false);
+
+  // Obtener la lista de jugadores invitados y confirmados cuando se carga el partido
+  const [invitedPlayers, setInvitedPlayers] = useState<PlayerEntry[]>([]);
+  const [confirmedPlayersIds, setConfirmedPlayersIds] = useState<string[]>([]);
+
   useEffect(() => {
     const loadMatch = async () => {
       if (id) {
@@ -58,6 +67,24 @@ export default function MatchDetailScreen() {
 
     loadMatch();
   }, [id]);
+
+  // Al cargar los datos del partido, actualizar las listas de jugadores
+  useEffect(() => {
+    if (match) {
+      // Filtrar jugadores invitados
+      const invited = match.players.filter(
+        (player) => player.status === "invited"
+      );
+      setInvitedPlayers(invited);
+
+      // Obtener IDs de jugadores confirmados y el creador para filtrar en la búsqueda
+      const confirmedIds = match.players
+        .filter((player) => player.status === "confirmed")
+        .map((player) => player.userId);
+
+      setConfirmedPlayersIds(confirmedIds);
+    }
+  }, [match]);
 
   // Verificar si el usuario está en el partido
   const isCreator = user && match ? user.uid === match.createdBy : false;
@@ -224,6 +251,15 @@ export default function MatchDetailScreen() {
         },
       ]
     );
+  };
+
+  // función para actualizar después de enviar invitaciones
+  const handleInvitationsSent = async () => {
+    // Recargar datos del partido para mostrar los nuevos invitados
+    if (id) {
+      const updatedMatch = await getMatchDetails(id);
+      setMatch(updatedMatch);
+    }
   };
 
   if (isLoading || !match) {
@@ -551,6 +587,16 @@ export default function MatchDetailScreen() {
               >
                 Jugadores
               </ThemedText>
+              {isCreator && !isMatchPast && match.status !== "cancelled" && (
+                <Button
+                  title="Invitar Jugadores"
+                  size="small"
+                  variant="outlined"
+                  leftIcon="person.fill"
+                  onPress={() => setShowInviteModal(true)}
+                  style={styles.inviteButton}
+                />
+              )}
             </View>
 
             <PlayerList
@@ -560,6 +606,19 @@ export default function MatchDetailScreen() {
               onChangeTeam={handleChangeTeam}
               onRemovePlayer={isCreator ? handleRemovePlayer : undefined}
             />
+            {/* Jugadores invitados */}
+            {isCreator && invitedPlayers.length > 0 && (
+              <View style={styles.invitedPlayersSection}>
+                <ThemedText
+                  type="body"
+                  weight="semiBold"
+                  style={styles.invitedPlayersTitle}
+                >
+                  Invitaciones pendientes ({invitedPlayers.length})
+                </ThemedText>
+                <InvitedPlayersList players={invitedPlayers} />
+              </View>
+            )}
           </Card>
 
           {/* Formulario de calificación (si el partido ya pasó) */}
@@ -644,6 +703,14 @@ export default function MatchDetailScreen() {
           </ThemedView>
         </SafeAreaView>
       )}
+      {/* Modal para invitar jugadores */}
+      <InvitePlayersModal
+        visible={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        matchId={match.id}
+        existingPlayers={confirmedPlayersIds}
+        onInvitationsSent={handleInvitationsSent}
+      />
     </ThemedView>
   );
 }
@@ -846,5 +913,15 @@ const styles = StyleSheet.create({
   },
   errorButton: {
     minWidth: 120,
+  },
+  inviteButton: {
+    alignSelf: "flex-end",
+    marginBottom: Spacing.s,
+  },
+  invitedPlayersSection: {
+    marginTop: Spacing.m,
+  },
+  invitedPlayersTitle: {
+    marginBottom: Spacing.s,
   },
 });

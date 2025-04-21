@@ -26,6 +26,8 @@ import { useRatings } from "@/hooks/useRatings";
 import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
+import { InvitationsList } from "@/components/match/InvitationsList";
+import { useInvitations } from "@/hooks/useInvitations";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -33,6 +35,7 @@ export default function HomeScreen() {
   const { fields, fetchFields, getUserLocation } = useFields();
   const { myMatches, myCreatedMatches, fetchMatches } = useMatches();
   const { pendingRatings, fetchPendingRatings } = useRatings();
+  const { pendingInvitations, loadPendingInvitations } = useInvitations();
   const { showNotification } = useNotification();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -81,14 +84,20 @@ export default function HomeScreen() {
       // Cargar ubicación del usuario
       await getUserLocation();
 
-      // Cargar canchas cercanas
-      await fetchFields(true);
+      // Cargar datos en paralelo para mejor rendimiento
+      await Promise.all([
+        // Cargar canchas cercanas
+        fetchFields(true),
 
-      // Cargar partidos del usuario
-      await fetchMatches(user.uid, true);
+        // Cargar partidos del usuario
+        fetchMatches(user.uid, true),
 
-      // Cargar calificaciones pendientes
-      await fetchPendingRatings(user.uid);
+        // Cargar calificaciones pendientes
+        fetchPendingRatings(user.uid),
+
+        // Cargar invitaciones pendientes
+        loadPendingInvitations(),
+      ]);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
       // Solo mostrar notificación si el componente sigue montado
@@ -111,6 +120,7 @@ export default function HomeScreen() {
       await Promise.all([
         fetchMatches(user.uid, true),
         fetchPendingRatings(user.uid),
+        loadPendingInvitations(),
       ]);
     } catch (error) {
       console.error("Error al actualizar datos:", error);
@@ -219,6 +229,28 @@ export default function HomeScreen() {
                   />
                 </View>
               </Card>
+            </View>
+          )}
+
+          {/* Invitaciones pendientes */}
+          {pendingInvitations && pendingInvitations.length > 0 && (
+            <View style={styles.invitationsSection}>
+              <View style={styles.sectionHeader}>
+                <ThemedText type="subheading">
+                  Invitaciones Pendientes
+                </ThemedText>
+                <Button
+                  title="Ver todas"
+                  variant="ghost"
+                  size="small"
+                  onPress={() => handleSafeNavigation("/invitations")}
+                />
+              </View>
+              <InvitationsList
+                invitations={pendingInvitations}
+                onUpdate={loadPendingInvitations}
+                compact={true}
+              />
             </View>
           )}
 
@@ -441,5 +473,9 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.m,
+  },
+  invitationsSection: {
+    paddingHorizontal: Spacing.l,
+    marginBottom: Spacing.l,
   },
 });

@@ -75,6 +75,7 @@ export default function RootLayout() {
             <Stack.Screen name="match/edit/[id]" />
             <Stack.Screen name="ratings/pending" />
             <Stack.Screen name="profile/edit" />
+            <Stack.Screen name="invitations" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
         </NotificationProvider>

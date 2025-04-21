@@ -452,43 +452,81 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
         matchData.maxPlayers ||
         getDefaultMaxPlayers(matchData.type as MatchType);
 
-      // Crear el objeto del partido
+      // Función auxiliar corregida para TypeScript
+      // Usando type assertion para manejar valores null
+      const ensureValidValue = <T>(
+        value: T | undefined | null,
+        defaultValue: T
+      ): T => {
+        return value === undefined ? defaultValue : (value as T);
+      };
+
+      // Crear el objeto del partido con valores seguros (sin undefined)
       const newMatch = {
         createdBy: user.uid,
         creatorName: user.displayName || "Usuario",
-        date: matchData.date || Timestamp.fromDate(new Date()),
-        time: matchData.time || "18:00",
-        fieldId: matchData.fieldId || null,
-        fieldName: fieldData?.name || matchData.fieldName || null,
-        address: fieldData?.address || matchData.address || null,
-        location: fieldData?.geoPoint || matchData.location || null,
-        type: matchData.type || "5v5",
-        level: matchData.level || "all",
-        price: matchData.price || null,
-        isPrivate: matchData.isPrivate || false,
-        status: "open",
+        date: ensureValidValue<Timestamp>(
+          matchData.date,
+          Timestamp.fromDate(new Date())
+        ),
+        time: ensureValidValue<string>(matchData.time, "18:00"),
+        fieldId: ensureValidValue<string | null>(matchData.fieldId, null),
+        fieldName: ensureValidValue<string | null>(
+          fieldData?.name || matchData.fieldName,
+          null
+        ),
+        address: ensureValidValue<string | null>(
+          fieldData?.address || matchData.address,
+          null
+        ),
+        location: ensureValidValue<any>(
+          fieldData?.geoPoint || matchData.location,
+          null
+        ),
+        type: ensureValidValue<MatchType>(
+          matchData.type as MatchType,
+          "5v5" as MatchType
+        ),
+        level: ensureValidValue<MatchLevel>(
+          matchData.level as MatchLevel,
+          "all" as MatchLevel
+        ),
+        price: ensureValidValue<number | null>(matchData.price, null),
+        isPrivate: ensureValidValue<boolean>(matchData.isPrivate, false),
+        status: "open" as MatchStatus,
         maxPlayers,
         players: [
           {
             userId: user.uid,
             displayName: user.displayName || "Usuario",
-            photoURL: user.photoURL,
-            team: "A",
-            status: "confirmed",
+            photoURL: user.photoURL || null, // Aseguramos que photoURL nunca sea undefined
+            team: "A" as TeamType,
+            status: "confirmed" as PlayerStatus,
             joinedAt: Timestamp.now(),
           },
         ],
-        description: matchData.description || "",
-        uniformA: matchData.uniformA || null,
-        uniformB: matchData.uniformB || null,
-        chatEnabled:
+        description: ensureValidValue<string>(matchData.description, ""),
+        uniformA: ensureValidValue<string | null>(matchData.uniformA, null),
+        uniformB: ensureValidValue<string | null>(matchData.uniformB, null),
+        chatEnabled: ensureValidValue<boolean>(
           matchData.chatEnabled !== undefined ? matchData.chatEnabled : true,
+          true
+        ),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
+      // Verificar que no haya valores undefined en el objeto final
+      // Esto es una comprobación de seguridad adicional
+      const safeMatch = Object.fromEntries(
+        Object.entries(newMatch).map(([key, value]) => [
+          key,
+          value === undefined ? null : value,
+        ])
+      );
+
       // Guardar en Firestore
-      const docRef = await addDoc(collection(db, "matches"), newMatch);
+      const docRef = await addDoc(collection(db, "matches"), safeMatch);
 
       // Actualizar la lista de partidos
       await get().fetchMatches(user.uid, true);
@@ -496,6 +534,7 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
       set({ isLoading: false });
       return docRef.id;
     } catch (error) {
+      console.error("Error en createMatch:", error);
       set({
         isLoading: false,
         error: (error as Error).message,

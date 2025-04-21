@@ -149,7 +149,7 @@ export default function CreateMatchScreen() {
     );
   };
 
-  // Manejar creación del partido
+  // Manejar creación del partido - CORREGIDO PARA ELIMINAR VALORES UNDEFINED
   const handleCreateMatch = async () => {
     if (!user || !profile) {
       showNotification("Debes iniciar sesión para crear un partido", "error");
@@ -170,7 +170,7 @@ export default function CreateMatchScreen() {
       const matchDateTime = new Date(date);
       matchDateTime.setHours(time.getHours(), time.getMinutes());
 
-      // Crear objeto del partido
+      // Crear objeto del partido con valores seguros (sin undefined)
       const matchData = {
         date: Timestamp.fromDate(matchDateTime),
         time: formatTime(time),
@@ -181,9 +181,10 @@ export default function CreateMatchScreen() {
         fieldName: selectedField?.name || null,
         address: selectedField?.address || null,
         location: selectedField?.location || null,
-        description,
-        uniformA: uniformA || null,
-        uniformB: uniformB || null,
+        description: description || "", // Asegurar que nunca sea undefined
+        uniformA: uniformA || null, // Convertir string vacía a null
+        uniformB: uniformB || null, // Convertir string vacía a null
+        // No enviar propiedades adicionales que no se hayan definido
       };
 
       // Crear partido

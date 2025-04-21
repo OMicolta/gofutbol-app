@@ -11,10 +11,13 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { NotificationBadge } from "@/components/ui/NotificationBadge";
+import { useInvitations } from "@/hooks/useInvitations";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user, isInitializing, requireAuth } = useAuth();
+  const { pendingInvitations, loadPendingInvitations } = useInvitations();
 
   // Verificar autenticación al montar el componente, pero sin redirecciones automáticas
   // para evitar problemas de navegación prematura
@@ -26,6 +29,13 @@ export default function TabLayout() {
 
     return () => clearTimeout(checkAuth);
   }, []);
+
+  // Cargar invitaciones al inicializarse el componente
+  useEffect(() => {
+    if (user) {
+      loadPendingInvitations();
+    }
+  }, [user]);
 
   // Mostrar pantalla de carga mientras se inicializa
   if (isInitializing) {
@@ -94,7 +104,12 @@ export default function TabLayout() {
         options={{
           title: "Partidos",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="soccer.ball" color={color} />
+            <View>
+              <IconSymbol size={28} name="soccer.ball" color={color} />
+              {pendingInvitations.length > 0 && (
+                <NotificationBadge count={pendingInvitations.length} />
+              )}
+            </View>
           ),
         }}
       />
