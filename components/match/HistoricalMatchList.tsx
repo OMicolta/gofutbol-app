@@ -1,27 +1,34 @@
 // components/match/HistoricalMatchList.tsx
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
-  View,
-  Text,
-  FlatList,
   StyleSheet,
+  View,
+  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import Animated, { FadeIn } from "react-native-reanimated";
+
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { HistoricalMatchCard } from "@/components/match/HistoricalMatchCard";
+import { Button } from "@/components/ui/Button";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useHistoricalMatches } from "@/hooks/useHistoricalMatches";
-import { Match } from "@/store/matchStore";
+import { useAuth } from "@/hooks/useAuth";
+import { Colors, Spacing, Shape } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Colors } from "@/constants/Colors";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useNotification } from "@/context/NotificationContext";
 
-type Tab = "all" | "participated" | "created";
+type TabType = "all" | "participated" | "created";
 
-export const HistoricalMatchList = () => {
+export function HistoricalMatchList() {
   const colorScheme = useColorScheme();
-  const [activeTab, setActiveTab] = useState<Tab>("all");
+  const { user } = useAuth();
   const {
     historicalMatches,
     myHistoricalMatches,
@@ -31,118 +38,54 @@ export const HistoricalMatchList = () => {
     isLoading,
     error,
   } = useHistoricalMatches();
+  const { showNotification } = useNotification();
 
-  const handleRefresh = () => {
-    fetchHistoricalMatches(true);
+  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Actualizar cuando la pantalla obtiene foco
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        refreshData(false);
+      }
+    }, [user])
+  );
+
+  // Refrescar datos
+  const refreshData = async (showLoading = true) => {
+    if (!user) return;
+
+    if (showLoading) {
+      setRefreshing(true);
+    }
+
+    try {
+      await fetchHistoricalMatches(true);
+    } catch (error) {
+      console.error("Error al cargar historial:", error);
+      showNotification("Error al cargar historial de partidos", "error");
+    } finally {
+      if (showLoading) {
+        setRefreshing(false);
+      }
+    }
   };
 
+  // Cambiar entre pestañas
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+  };
+
+  // Cargar más partidos al final de la lista
   const handleEndReached = () => {
-    fetchMoreHistoricalMatches();
+    if (!isLoading && !refreshing) {
+      fetchMoreHistoricalMatches();
+    }
   };
 
-  const handleMatchPress = (match: Match) => {
-    router.push({
-      pathname: `/match/[id]` as const,
-      params: { id: match.id, isHistorical: "true" },
-    });
-  };
-
-  // Función simple para formatear fecha
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("es-ES", {
-      weekday: "short",
-      day: "numeric",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const renderMatchItem = ({ item }: { item: Match }) => {
-    return (
-      <TouchableOpacity
-        style={[
-          styles.matchCard,
-          { backgroundColor: Colors[colorScheme].card },
-        ]}
-        onPress={() => handleMatchPress(item)}
-      >
-        <View style={styles.matchHeader}>
-          <Text style={[styles.matchType, { color: Colors[colorScheme].text }]}>
-            {item.type} · {item.level}
-          </Text>
-          <Text
-            style={[styles.matchDate, { color: Colors[colorScheme].secondary }]}
-          >
-            {formatDate(item.date.toDate())}
-          </Text>
-        </View>
-
-        <View style={styles.matchInfo}>
-          <Text style={[styles.fieldName, { color: Colors[colorScheme].text }]}>
-            {item.fieldName || "Cancha sin especificar"}
-          </Text>
-
-          <View style={styles.matchStatus}>
-            <Ionicons
-              name="checkmark-circle"
-              size={14}
-              color={Colors[colorScheme].success}
-              style={styles.statusIcon}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                { color: Colors[colorScheme].success },
-              ]}
-            >
-              Finalizado
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.matchFooter}>
-          <View style={styles.teamSection}>
-            <Text
-              style={[styles.teamLabel, { color: Colors[colorScheme].info }]}
-            >
-              Equipo A
-            </Text>
-            <Text
-              style={[styles.playerCount, { color: Colors[colorScheme].text }]}
-            >
-              {
-                item.players.filter(
-                  (p) => p.team === "A" && p.status === "confirmed"
-                ).length
-              }{" "}
-              jugadores
-            </Text>
-          </View>
-
-          <View style={styles.teamSection}>
-            <Text
-              style={[styles.teamLabel, { color: Colors[colorScheme].primary }]}
-            >
-              Equipo B
-            </Text>
-            <Text
-              style={[styles.playerCount, { color: Colors[colorScheme].text }]}
-            >
-              {
-                item.players.filter(
-                  (p) => p.team === "B" && p.status === "confirmed"
-                ).length
-              }{" "}
-              jugadores
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const getActiveMatches = () => {
+  // Determinar qué datos mostrar según la pestaña activa
+  const getDisplayMatches = () => {
     switch (activeTab) {
       case "participated":
         return myHistoricalMatches;
@@ -154,24 +97,21 @@ export const HistoricalMatchList = () => {
     }
   };
 
-  const renderEmptyState = () => {
-    if (isLoading) {
+  // Contenido para cuando no hay partidos
+  const renderEmptyContent = () => {
+    if (isLoading && getDisplayMatches().length === 0) {
       return (
-        <View style={styles.emptyContainer}>
+        <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
-          <Text
-            style={[
-              styles.emptyText,
-              { color: Colors[colorScheme].textSecondary },
-            ]}
-          >
-            Cargando partidos...
-          </Text>
+          <ThemedText style={styles.emptyText}>
+            Cargando historial de partidos...
+          </ThemedText>
         </View>
       );
     }
 
-    let message = "No hay partidos históricos disponibles";
+    let message = "No hay partidos en el historial";
+
     if (activeTab === "participated") {
       message = "No has participado en partidos anteriores";
     } else if (activeTab === "created") {
@@ -179,268 +119,233 @@ export const HistoricalMatchList = () => {
     }
 
     return (
-      <View style={styles.emptyContainer}>
-        <Ionicons
-          name="calendar-outline"
+      <ThemedView style={styles.emptyContainer} variant="secondary" rounded>
+        <IconSymbol
+          name="calendar"
           size={48}
           color={Colors[colorScheme].textSecondary}
         />
-        <Text
-          style={[
-            styles.emptyText,
-            { color: Colors[colorScheme].textSecondary },
-          ]}
-        >
+        <ThemedText type="body" secondary style={styles.emptyText}>
           {message}
-        </Text>
-      </View>
+        </ThemedText>
+        <Button
+          title="Refrescar"
+          size="small"
+          variant="outlined"
+          onPress={() => refreshData()}
+          style={styles.refreshButton}
+        />
+      </ThemedView>
     );
   };
 
-  if (error) {
+  // Contenido para mostrar en caso de error
+  const renderErrorContent = () => {
     return (
-      <View style={styles.errorContainer}>
-        <Ionicons
-          name="alert-circle-outline"
-          size={48}
-          color={Colors[colorScheme].danger}
+      <ThemedView style={styles.errorContainer} variant="secondary" rounded>
+        <IconSymbol name="xmark" size={48} color={Colors[colorScheme].danger} />
+        <ThemedText type="subtitle" style={styles.errorTitle}>
+          Error al cargar historial
+        </ThemedText>
+        <ThemedText style={styles.errorText}>
+          {error || "No se pudo cargar el historial de partidos"}
+        </ThemedText>
+        <Button
+          title="Reintentar"
+          onPress={() => refreshData()}
+          style={styles.retryButton}
         />
-        <Text style={[styles.errorText, { color: Colors[colorScheme].danger }]}>
-          {error}
-        </Text>
-        <TouchableOpacity
-          style={[
-            styles.retryButton,
-            { backgroundColor: Colors[colorScheme].primary },
-          ]}
-          onPress={handleRefresh}
-        >
-          <Text style={[styles.retryText, { color: "#FFFFFF" }]}>
-            Reintentar
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </ThemedView>
     );
-  }
+  };
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: Colors[colorScheme].background },
-      ]}
-    >
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "all" && {
-              borderBottomColor: Colors[colorScheme].primary,
-            },
-          ]}
-          onPress={() => setActiveTab("all")}
-        >
-          <Text
+    <ThemedView style={styles.container}>
+      <SafeAreaView edges={["top"]} style={styles.safeArea}>
+        <ThemedView style={styles.header}>
+          <ThemedText type="title">Historial de Partidos</ThemedText>
+          <ThemedText type="body" secondary>
+            Revisa tus partidos anteriores
+          </ThemedText>
+        </ThemedView>
+
+        {/* Tabs de navegación */}
+        <ThemedView style={styles.tabsContainer}>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              {
-                color:
-                  activeTab === "all"
-                    ? Colors[colorScheme].primary
-                    : Colors[colorScheme].textSecondary,
+              styles.tabButton,
+              activeTab === "all" && styles.activeTabButton,
+              activeTab === "all" && {
+                borderBottomColor: Colors[colorScheme].primary,
               },
             ]}
+            onPress={() => handleTabChange("all")}
           >
-            Todos
-          </Text>
-        </TouchableOpacity>
+            <ThemedText
+              style={[
+                styles.tabText,
+                activeTab === "all" && styles.activeTabText,
+                activeTab === "all" && { color: Colors[colorScheme].primary },
+              ]}
+            >
+              Todos
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "participated" && {
-              borderBottomColor: Colors[colorScheme].primary,
-            },
-          ]}
-          onPress={() => setActiveTab("participated")}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              {
-                color:
-                  activeTab === "participated"
-                    ? Colors[colorScheme].primary
-                    : Colors[colorScheme].textSecondary,
+              styles.tabButton,
+              activeTab === "participated" && styles.activeTabButton,
+              activeTab === "participated" && {
+                borderBottomColor: Colors[colorScheme].primary,
               },
             ]}
+            onPress={() => handleTabChange("participated")}
           >
-            Participados
-          </Text>
-        </TouchableOpacity>
+            <ThemedText
+              style={[
+                styles.tabText,
+                activeTab === "participated" && styles.activeTabText,
+                activeTab === "participated" && {
+                  color: Colors[colorScheme].primary,
+                },
+              ]}
+            >
+              Participados
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "created" && {
-              borderBottomColor: Colors[colorScheme].primary,
-            },
-          ]}
-          onPress={() => setActiveTab("created")}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              {
-                color:
-                  activeTab === "created"
-                    ? Colors[colorScheme].primary
-                    : Colors[colorScheme].textSecondary,
+              styles.tabButton,
+              activeTab === "created" && styles.activeTabButton,
+              activeTab === "created" && {
+                borderBottomColor: Colors[colorScheme].primary,
               },
             ]}
+            onPress={() => handleTabChange("created")}
           >
-            Creados
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <ThemedText
+              style={[
+                styles.tabText,
+                activeTab === "created" && styles.activeTabText,
+                activeTab === "created" && {
+                  color: Colors[colorScheme].primary,
+                },
+              ]}
+            >
+              Creados
+            </ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
 
-      <FlatList
-        data={getActiveMatches()}
-        renderItem={renderMatchItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={handleRefresh}
-            colors={[Colors[colorScheme].primary]}
-            tintColor={Colors[colorScheme].primary}
+        {/* Lista de partidos históricos */}
+        {error ? (
+          renderErrorContent()
+        ) : (
+          <Animated.FlatList
+            entering={FadeIn.duration(300)}
+            data={getDisplayMatches()}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => refreshData()}
+                colors={[Colors[colorScheme].primary]}
+                tintColor={Colors[colorScheme].primary}
+              />
+            }
+            ListEmptyComponent={renderEmptyContent}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.2}
+            renderItem={({ item }) => <HistoricalMatchCard match={item} />}
+            ItemSeparatorComponent={() => (
+              <View style={{ height: Spacing.s }} />
+            )}
           />
-        }
-        ListEmptyComponent={renderEmptyState}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.1}
-      />
-    </View>
+        )}
+      </SafeAreaView>
+    </ThemedView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  tab: {
+  safeArea: {
     flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
+  },
+  header: {
+    paddingHorizontal: Spacing.l,
+    paddingTop: Spacing.m,
+    paddingBottom: Spacing.m,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.l,
+    marginBottom: Spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.borderLight,
+  },
+  tabButton: {
+    paddingVertical: Spacing.s,
+    paddingHorizontal: Spacing.m,
+    marginRight: Spacing.s,
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
+  activeTabButton: {
+    borderBottomWidth: 2,
+  },
   tabText: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  activeTabText: {
     fontWeight: "600",
   },
   listContainer: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: Spacing.l,
+    paddingBottom: 120, // Extra padding for tab bar
   },
-  matchCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  matchHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  matchType: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  matchDate: {
-    fontSize: 14,
-  },
-  matchInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  fieldName: {
-    fontSize: 16,
-    fontWeight: "bold",
+  centerContainer: {
     flex: 1,
-  },
-  matchStatus: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-  },
-  statusIcon: {
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  matchFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  teamSection: {
-    flex: 1,
-  },
-  teamLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  playerCount: {
-    fontSize: 12,
+    padding: Spacing.l,
   },
   emptyContainer: {
+    margin: Spacing.l,
+    padding: Spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    padding: 32,
   },
   emptyText: {
-    fontSize: 16,
+    marginTop: Spacing.m,
     textAlign: "center",
-    marginTop: 8,
+    marginBottom: Spacing.m,
+  },
+  refreshButton: {
+    minWidth: 120,
   },
   errorContainer: {
-    flex: 1,
+    margin: Spacing.l,
+    padding: Spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    padding: 32,
+  },
+  errorTitle: {
+    marginTop: Spacing.m,
+    marginBottom: Spacing.s,
   },
   errorText: {
-    fontSize: 16,
     textAlign: "center",
-    marginTop: 16,
-    marginBottom: 24,
+    marginBottom: Spacing.l,
   },
   retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryText: {
-    fontSize: 16,
-    fontWeight: "bold",
+    minWidth: 150,
   },
 });
-
-export default HistoricalMatchList;

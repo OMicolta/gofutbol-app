@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
+import { HistoricalMatchCard } from "@/components/match/HistoricalMatchCard";
 
 type TabType = "myMatches" | "openMatches" | "history";
 
@@ -186,13 +187,26 @@ export default function MatchesScreen() {
     } else if (activeTab === "openMatches") {
       return filteredMatches;
     } else if (activeTab === "history") {
-      // Combinar partidos históricos creados y en los que participé
-      return [
-        ...myCreatedHistoricalMatches,
-        ...myHistoricalMatches.filter(
-          (match) => !myCreatedHistoricalMatches.some((m) => m.id === match.id)
-        ),
-      ];
+      // Combinar partidos históricos creados y en los que participé, asegurando que no haya duplicados
+      const uniqueIds = new Set();
+      const combinedMatches = [];
+
+      // Primero añadimos los partidos creados
+      for (const match of myCreatedHistoricalMatches) {
+        uniqueIds.add(match.id);
+        combinedMatches.push(match);
+      }
+
+      // Luego añadimos los partidos en los que participé, evitando duplicados
+      for (const match of myHistoricalMatches) {
+        if (!uniqueIds.has(match.id)) {
+          uniqueIds.add(match.id);
+          combinedMatches.push(match);
+        }
+      }
+
+      // Ordenamos por fecha, más recientes primero
+      return combinedMatches.sort((a, b) => b.date.seconds - a.date.seconds);
     }
 
     return [];
@@ -373,9 +387,13 @@ export default function MatchesScreen() {
                 )}
               </View>
             }
-            renderItem={({ item }) => (
-              <MatchCard match={item} isHistorical={activeTab === "history"} />
-            )}
+            renderItem={({ item }) =>
+              activeTab === "history" ? (
+                <HistoricalMatchCard match={item} />
+              ) : (
+                <MatchCard match={item} isHistorical={false} />
+              )
+            }
           />
         )}
       </SafeAreaView>
