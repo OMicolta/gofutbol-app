@@ -3,8 +3,6 @@ import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
-  RefreshControl,
-  ScrollView,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
@@ -40,6 +38,43 @@ export default function InvitationsScreen() {
     setRefreshing(false);
   };
 
+  // Contenido principal para mostrar dentro de la lista
+  const renderContent = () => {
+    if (isLoading && !refreshing) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors[colorScheme].primary} />
+          <ThemedText style={styles.loadingText}>
+            Cargando invitaciones...
+          </ThemedText>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <ThemedView style={styles.errorContainer} variant="secondary" rounded>
+          <ThemedText type="body" style={styles.errorText}>
+            {error}
+          </ThemedText>
+          <Button
+            title="Reintentar"
+            size="small"
+            onPress={loadPendingInvitations}
+          />
+        </ThemedView>
+      );
+    }
+
+    // Renderizar la lista de invitaciones (que ya tiene FlatList interno)
+    return (
+      <InvitationsList
+        invitations={pendingInvitations}
+        onUpdate={loadPendingInvitations}
+      />
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -59,47 +94,13 @@ export default function InvitationsScreen() {
           <ThemedText type="title">Invitaciones</ThemedText>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
+        <View style={styles.content}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Invitaciones pendientes
           </ThemedText>
 
-          {isLoading && !refreshing ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator
-                size="large"
-                color={Colors[colorScheme].primary}
-              />
-              <ThemedText style={styles.loadingText}>
-                Cargando invitaciones...
-              </ThemedText>
-            </View>
-          ) : error ? (
-            <ThemedView
-              style={styles.errorContainer}
-              variant="secondary"
-              rounded
-            >
-              <ThemedText type="body" style={styles.errorText}>
-                {error}
-              </ThemedText>
-              <Button
-                title="Reintentar"
-                size="small"
-                onPress={loadPendingInvitations}
-              />
-            </ThemedView>
-          ) : (
-            <InvitationsList
-              invitations={pendingInvitations}
-              onUpdate={loadPendingInvitations}
-            />
-          )}
+          {/* Contenido principal - ahora sin ScrollView anidado */}
+          {renderContent()}
 
           {pendingInvitations.length > 0 && (
             <ThemedText type="caption" secondary style={styles.hintText}>
@@ -108,7 +109,7 @@ export default function InvitationsScreen() {
               automáticamente al partido.
             </ThemedText>
           )}
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -137,10 +138,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
-  scrollContent: {
+  content: {
+    flex: 1,
     paddingHorizontal: Spacing.l,
-    paddingBottom: Spacing.xxl,
-    flexGrow: 1,
   },
   sectionTitle: {
     marginBottom: Spacing.m,

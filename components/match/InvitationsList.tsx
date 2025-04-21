@@ -4,14 +4,13 @@ import {
   StyleSheet,
   View,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useInvitations } from "@/hooks/useInvitations";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -21,12 +20,16 @@ interface InvitationsListProps {
   invitations: Match[]; // Partidos a los que el usuario ha sido invitado
   onUpdate?: () => void;
   compact?: boolean; // Versión compacta para mostrar en el dashboard
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export function InvitationsList({
   invitations,
   onUpdate,
   compact = false,
+  refreshing = false,
+  onRefresh,
 }: InvitationsListProps) {
   const colorScheme = useColorScheme();
   const { acceptInvitation, declineInvitation } = useInvitations();
@@ -260,13 +263,18 @@ export function InvitationsList({
     );
   }
 
-  // Versión completa
+  // Versión completa con soporte para refresh
   return (
     <FlatList
       data={invitations}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.listContainer}
       renderItem={renderInvitationItem}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        ) : undefined
+      }
     />
   );
 }

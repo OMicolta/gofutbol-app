@@ -13,6 +13,9 @@ import {
   QuerySnapshot,
   QueryDocumentSnapshot,
   DocumentData,
+  Timestamp,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { UserProfile } from "@/store/authStore";
@@ -25,7 +28,7 @@ export function useInvitations() {
   const [error, setError] = useState<string | null>(null);
   const [pendingInvitations, setPendingInvitations] = useState<Match[]>([]);
 
-  // Cargar invitaciones pendientes para el usuario actual
+  // Cargar invitaciones pendientes para el usuario actual - VERSIÓN MEJORADA
   const loadPendingInvitations = async () => {
     if (!user) return [];
 
@@ -33,29 +36,39 @@ export function useInvitations() {
     setError(null);
 
     try {
-      // Obtener partidos con invitaciones pendientes
+      // Obtener partidos futuros sin filtrar por players para evitar el problema con array-contains
       const matchesRef = collection(db, "matches");
       const now = new Date();
 
-      // Consulta para encontrar partidos donde el usuario está invitado
-      const invitedMatchesQuery = query(
+      // Consulta para partidos futuros (no filtramos por players aún)
+      const matchesQuery = query(
         matchesRef,
-        where("players", "array-contains", {
-          userId: user.uid,
-          status: "invited",
-        }),
-        where("date", ">=", now)
+        where("date", ">=", Timestamp.fromDate(now)),
+        orderBy("date", "asc"),
+        limit(100) // Limitamos a un número razonable de partidos
       );
 
-      const querySnapshot = await getDocs(invitedMatchesQuery);
+      const querySnapshot = await getDocs(matchesQuery);
       const invitations: Match[] = [];
 
+      // Filtramos manualmente los partidos donde el usuario está invitado
       querySnapshot.forEach((doc) => {
         const matchData = doc.data();
-        invitations.push({
-          id: doc.id,
-          ...matchData,
-        } as Match);
+        const players = matchData.players || [];
+
+        // Buscamos si el usuario está en la lista de jugadores con status "invited"
+        const playerEntry = players.find(
+          (player: any) =>
+            player.userId === user.uid && player.status === "invited"
+        );
+
+        if (playerEntry) {
+          // Este partido tiene una invitación pendiente para el usuario
+          invitations.push({
+            id: doc.id,
+            ...matchData,
+          } as Match);
+        }
       });
 
       setPendingInvitations(invitations);
