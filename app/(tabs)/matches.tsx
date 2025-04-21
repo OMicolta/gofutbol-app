@@ -391,7 +391,7 @@ export default function MatchesScreen() {
               activeTab === "history" ? (
                 <HistoricalMatchCard match={item} />
               ) : (
-                <MatchCard match={item} isHistorical={false} />
+                <MatchCard match={item} />
               )
             }
           />
