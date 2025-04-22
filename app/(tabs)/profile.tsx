@@ -26,6 +26,8 @@ import { Colors, Spacing } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNotification } from "@/context/NotificationContext";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useNotificationStore } from "@/store/notificationStore";
+import { NotificationBadge } from "@/components/ui/NotificationBadge";
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
@@ -40,6 +42,7 @@ export default function ProfileScreen() {
   } = useAuth();
   const { pendingRatings, refreshPendingRatings } = useRatings();
   const { showNotification } = useNotification();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
   const [uploading, setUploading] = useState(false);
 
@@ -48,10 +51,11 @@ export default function ProfileScreen() {
     requireAuth();
   }, []);
 
-  // Cargar calificaciones pendientes
+  // Cargar calificaciones pendientes y notificaciones
   useEffect(() => {
     if (user) {
       refreshPendingRatings();
+      fetchUnreadCount();
     }
   }, [user]);
 
@@ -157,6 +161,15 @@ export default function ProfileScreen() {
     }
   };
 
+  // Agregamos las funciones para navegar a las pantallas de notificaciones
+  const handleNotifications = () => {
+    router.push("/profile/notifications" as any);
+  };
+
+  const handleNotificationSettings = () => {
+    router.push("/profile/notification-settings" as any);
+  };
+
   if (isLoading || !user || !profile) {
     return (
       <ThemedView style={styles.loadingContainer}>
@@ -177,6 +190,23 @@ export default function ProfileScreen() {
         <SafeAreaView edges={["top"]}>
           <ThemedView style={styles.header}>
             <ThemedText type="title">Mi Perfil</ThemedText>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={handleNotifications}
+            >
+              <IconSymbol
+                name="bell.fill"
+                size={24}
+                color={Colors[colorScheme].text}
+              />
+              {unreadCount > 0 && (
+                <NotificationBadge
+                  count={unreadCount}
+                  position="topRight"
+                  size="small"
+                />
+              )}
+            </TouchableOpacity>
           </ThemedView>
 
           {/* Información del perfil */}
@@ -310,20 +340,73 @@ export default function ProfileScreen() {
             <ThemeSelector />
           </View>
 
+          {/* Sección de Configuración */}
+          <View style={styles.settingsSection}>
+            <ThemedText type="heading" style={styles.sectionTitle}>
+              Configuración
+            </ThemedText>
+
+            <Card style={styles.settingsCard}>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={handleEditProfile}
+              >
+                <View style={styles.settingIcon}>
+                  <IconSymbol
+                    name="person.fill"
+                    size={20}
+                    color={Colors[colorScheme].primary}
+                  />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <ThemedText type="body" weight="medium">
+                    Editar Perfil
+                  </ThemedText>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={18}
+                  color={Colors[colorScheme].textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={handleNotificationSettings}
+              >
+                <View style={styles.settingIcon}>
+                  <IconSymbol
+                    name="bell.fill"
+                    size={20}
+                    color={Colors[colorScheme].primary}
+                  />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <ThemedText type="body" weight="medium">
+                    Notificaciones
+                  </ThemedText>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={18}
+                  color={Colors[colorScheme].textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              {/* ...otros elementos de configuración... */}
+            </Card>
+          </View>
+
           {/* Acciones de la cuenta */}
           <View style={styles.accountSection}>
             <ThemedText type="subheading" style={styles.sectionTitle}>
               Cuenta
             </ThemedText>
             <Card>
-              <Button
-                title="Editar perfil"
-                variant="ghost"
-                leftIcon="person.fill"
-                fullWidth
-                onPress={handleEditProfile}
-              />
-              <View style={styles.divider} />
               <Button
                 title="Cerrar sesión"
                 variant="ghost"
@@ -359,8 +442,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.l,
-    paddingTop: Spacing.m,
     paddingBottom: Spacing.m,
   },
   profileSection: {
@@ -494,5 +579,38 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.m,
+  },
+  notificationButton: {
+    padding: Spacing.s,
+    position: "relative",
+  },
+  settingsSection: {
+    marginTop: Spacing.l,
+    paddingHorizontal: Spacing.l,
+  },
+  settingsCard: {
+    padding: 0,
+    overflow: "hidden",
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.m,
+  },
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${Colors.light.primary}20`,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.m,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: `${Colors.light.textDisabled}20`,
   },
 });

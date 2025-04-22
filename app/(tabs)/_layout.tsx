@@ -13,11 +13,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { NotificationBadge } from "@/components/ui/NotificationBadge";
 import { useInvitations } from "@/hooks/useInvitations";
+import { useNotificationStore } from "@/store/notificationStore";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user, isInitializing, requireAuth } = useAuth();
   const { pendingInvitations, loadPendingInvitations } = useInvitations();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
   // Verificar autenticación al montar el componente, pero sin redirecciones automáticas
   // para evitar problemas de navegación prematura
@@ -30,10 +32,11 @@ export default function TabLayout() {
     return () => clearTimeout(checkAuth);
   }, []);
 
-  // Cargar invitaciones al inicializarse el componente
+  // Cargar invitaciones y notificaciones al inicializarse el componente
   useEffect(() => {
     if (user) {
       loadPendingInvitations();
+      fetchUnreadCount();
     }
   }, [user]);
 
@@ -118,7 +121,16 @@ export default function TabLayout() {
         options={{
           title: "Perfil",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <View>
+              <IconSymbol size={28} name="person.fill" color={color} />
+              {unreadCount > 0 && (
+                <NotificationBadge
+                  count={unreadCount}
+                  size="small"
+                  position="topRight"
+                />
+              )}
+            </View>
           ),
         }}
       />

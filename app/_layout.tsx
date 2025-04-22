@@ -6,13 +6,32 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Notifications from "expo-notifications";
 
 import ThemeProvider from "@/components/ThemeProvider";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { useAuthStore } from "@/store/authStore";
+import useNotifications from "@/hooks/useNotifications";
+
+// Configurar manejador de notificaciones para cuando la app está en segundo plano
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Componente para inicializar y escuchar notificaciones
+function NotificationInitializer() {
+  // Este hook configura listeners y maneja las notificaciones
+  useNotifications();
+
+  return null;
+}
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -60,6 +79,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <SafeAreaProvider>
         <NotificationProvider>
+          {/* Inicializar notificaciones solo cuando el usuario está autenticado */}
+          {isAuthenticated && <NotificationInitializer />}
+
           <Stack screenOptions={{ headerShown: false }}>
             {/* Rutas públicas y protegidas en el mismo Stack */}
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -75,6 +97,17 @@ export default function RootLayout() {
             <Stack.Screen name="match/edit/[id]" />
             <Stack.Screen name="ratings/pending" />
             <Stack.Screen name="profile/edit" />
+            <Stack.Screen
+              name="profile/notifications"
+              options={{ headerShown: true, title: "Notificaciones" }}
+            />
+            <Stack.Screen
+              name="profile/notification-settings"
+              options={{
+                headerShown: true,
+                title: "Configuración de notificaciones",
+              }}
+            />
             <Stack.Screen name="invitations" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
