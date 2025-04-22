@@ -35,6 +35,7 @@ const MAPPING = {
   plus: "add",
   minus: "remove",
   xmark: "close",
+  logout: "logout",
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;

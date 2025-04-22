@@ -179,6 +179,22 @@ export default function ProfileScreen() {
     );
   }
 
+  // Renderizar estrellas de calificación
+  const renderStars = (rating: number) => {
+    return (
+      <View style={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <IconSymbol
+            key={star}
+            name="star.fill"
+            size={16}
+            color={star <= rating ? Colors.light.primary : Colors.light.border}
+          />
+        ))}
+      </View>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -218,6 +234,7 @@ export default function ProfileScreen() {
                   onPress={handleChangeProfileImage}
                   disabled={uploading}
                 >
+                  <View style={styles.statusIndicator} />
                   {profile.photoURL ? (
                     <Image
                       source={{ uri: profile.photoURL }}
@@ -257,14 +274,18 @@ export default function ProfileScreen() {
                     @{profile.username || "sin_username"}
                   </ThemedText>
 
-                  <ThemedText type="body" secondary>
-                    {profile.position || "Posición no especificada"}
-                  </ThemedText>
-
-                  <View style={styles.matchesBadge}>
-                    <IconSymbol name="soccer.ball" size={16} color="white" />
-                    <ThemedText style={styles.matchesText}>
-                      {profile.stats?.totalMatches || 0} partidos
+                  <View style={styles.positionContainer}>
+                    <View style={styles.matchesBadge}>
+                      <ThemedText style={styles.matchesText}>
+                        {profile.stats?.totalMatches || 0} partidos
+                      </ThemedText>
+                    </View>
+                    <ThemedText
+                      type="body"
+                      secondary
+                      style={styles.positionText}
+                    >
+                      • {profile.position || "delantero"}
                     </ThemedText>
                   </View>
                 </View>
@@ -309,17 +330,31 @@ export default function ProfileScreen() {
 
               <View style={styles.statRow}>
                 <ThemedText type="body">Puntualidad</ThemedText>
-                <ThemedText type="body" weight="semiBold">
-                  {(profile.stats?.punctualityAvg || 0).toFixed(1)}/5
-                </ThemedText>
+                <View style={styles.ratingContainer}>
+                  {renderStars(5.0)}
+                  <ThemedText
+                    type="body"
+                    weight="semiBold"
+                    style={styles.ratingText}
+                  >
+                    5.0/5
+                  </ThemedText>
+                </View>
               </View>
               <View style={styles.divider} />
 
               <View style={styles.statRow}>
                 <ThemedText type="body">Actitud</ThemedText>
-                <ThemedText type="body" weight="semiBold">
-                  {(profile.stats?.attitudeAvg || 0).toFixed(1)}/5
-                </ThemedText>
+                <View style={styles.ratingContainer}>
+                  {renderStars(5.0)}
+                  <ThemedText
+                    type="body"
+                    weight="semiBold"
+                    style={styles.ratingText}
+                  >
+                    5.0/5
+                  </ThemedText>
+                </View>
               </View>
               <View style={styles.divider} />
 
@@ -342,7 +377,7 @@ export default function ProfileScreen() {
 
           {/* Sección de Configuración */}
           <View style={styles.settingsSection}>
-            <ThemedText type="heading" style={styles.sectionTitle}>
+            <ThemedText type="subheading" style={styles.sectionTitle}>
               Configuración
             </ThemedText>
 
@@ -353,7 +388,7 @@ export default function ProfileScreen() {
               >
                 <View style={styles.settingIcon}>
                   <IconSymbol
-                    name="person.fill"
+                    name="pencil"
                     size={20}
                     color={Colors[colorScheme].primary}
                   />
@@ -394,10 +429,6 @@ export default function ProfileScreen() {
                   color={Colors[colorScheme].textSecondary}
                 />
               </TouchableOpacity>
-
-              <View style={styles.separator} />
-
-              {/* ...otros elementos de configuración... */}
             </Card>
           </View>
 
@@ -407,13 +438,21 @@ export default function ProfileScreen() {
               Cuenta
             </ThemedText>
             <Card>
-              <Button
-                title="Cerrar sesión"
-                variant="ghost"
-                color="danger"
-                fullWidth
+              <TouchableOpacity
+                style={styles.logoutButton}
                 onPress={handleLogout}
-              />
+              >
+                <View style={styles.logoutButtonContent}>
+                  <IconSymbol
+                    name="logout"
+                    size={20}
+                    color={Colors.light.danger}
+                  />
+                  <ThemedText style={styles.logoutText} weight="medium">
+                    Cerrar sesión
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
             </Card>
           </View>
 
@@ -505,24 +544,39 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "white",
   },
+  statusIndicator: {
+    position: "absolute",
+    top: 5,
+    left: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#4CAF50",
+    borderWidth: 2,
+    borderColor: "white",
+    zIndex: 1,
+  },
   profileInfo: {
     flex: 1,
   },
-  matchesBadge: {
+  positionContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: Spacing.s,
+  },
+  matchesBadge: {
     backgroundColor: Colors.light.primary,
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs,
     borderRadius: 4,
-    alignSelf: "flex-start",
-    marginTop: Spacing.s,
   },
   matchesText: {
     color: "white",
-    marginLeft: 4,
     fontSize: 12,
     fontWeight: "bold",
+  },
+  positionText: {
+    marginLeft: Spacing.xs,
   },
   pendingRatingsSection: {
     paddingHorizontal: Spacing.l,
@@ -543,7 +597,18 @@ const styles = StyleSheet.create({
   statRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: Spacing.s,
+  },
+  starsContainer: {
+    flexDirection: "row",
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    marginLeft: Spacing.xs,
   },
   divider: {
     height: 1,
@@ -557,6 +622,18 @@ const styles = StyleSheet.create({
   accountSection: {
     paddingHorizontal: Spacing.l,
     marginBottom: Spacing.l,
+  },
+  logoutButton: {
+    alignItems: "center",
+    padding: Spacing.m,
+  },
+  logoutButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoutText: {
+    color: Colors.light.danger,
+    marginLeft: Spacing.xs,
   },
   footer: {
     paddingHorizontal: Spacing.l,
@@ -585,8 +662,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   settingsSection: {
-    marginTop: Spacing.l,
     paddingHorizontal: Spacing.l,
+    marginBottom: Spacing.l,
   },
   settingsCard: {
     padding: 0,
