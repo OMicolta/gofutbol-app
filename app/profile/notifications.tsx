@@ -71,13 +71,46 @@ export default function NotificationsScreen() {
       await markNotificationAsRead(notification.id);
     }
 
-    // Navegar a la pantalla objetivo si existe
-    if (notification.targetScreen) {
-      router.push({
-        pathname: notification.targetScreen as any,
-        params:
-          (notification.targetParams as Record<string, string | number>) || {},
-      });
+    // Navegar a la pantalla objetivo basado en el tipo de notificación
+    try {
+      const params =
+        (notification.targetParams as Record<string, string | number>) || {};
+      let routePath;
+
+      // Determinar la ruta basada en el tipo de notificación
+      switch (notification.type) {
+        case "match_invitation":
+          // Si es una invitación, dirigir a la pantalla de invitaciones
+          routePath = `/invitations`;
+          break;
+
+        case "match_reminder":
+        case "match_update":
+        case "team_changed":
+        case "player_joined":
+        case "player_left":
+        default:
+          // Para otros tipos, ir a detalles del partido
+          if (params.matchId) {
+            routePath = `/match/${params.matchId}`;
+          } else {
+            // Si no hay ID de partido, ir a la pantalla principal
+            routePath = "/";
+          }
+          break;
+      }
+
+      console.log(
+        "Navegando a:",
+        routePath,
+        "basado en tipo:",
+        notification.type
+      );
+      router.push(routePath as any);
+    } catch (error) {
+      console.error("Error al navegar:", error);
+      // Fallback a la pantalla principal
+      router.push("/");
     }
   };
 
