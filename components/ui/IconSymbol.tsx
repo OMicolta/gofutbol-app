@@ -36,6 +36,9 @@ const MAPPING = {
   minus: "remove",
   xmark: "close",
   logout: "logout",
+  // Nuevos iconos añadidos
+  "camera.fill": "camera-alt",
+  "location.fill": "location-on",
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;

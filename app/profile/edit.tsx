@@ -272,6 +272,7 @@ export default function EditProfileScreen() {
                   <Image
                     source={{ uri: photoURL }}
                     style={styles.profilePhoto}
+                    resizeMode="cover"
                   />
                 ) : (
                   <ThemedView style={styles.photoPlaceholder} rounded>
@@ -288,7 +289,7 @@ export default function EditProfileScreen() {
                 )}
 
                 <View style={styles.editPhotoButton}>
-                  <IconSymbol name="pencil" size={18} color="white" />
+                  <IconSymbol name="camera.fill" size={16} color="white" />
                 </View>
               </TouchableOpacity>
               <ThemedText type="caption" secondary style={styles.photoHint}>
@@ -303,15 +304,18 @@ export default function EditProfileScreen() {
               </ThemedText>
 
               <View style={styles.inputGroup}>
-                <ThemedText type="body">Nombre completo</ThemedText>
-                <ThemedView
-                  style={[
-                    styles.inputContainer,
-                    formErrors.displayName ? styles.inputError : null,
-                  ]}
-                  variant="secondary"
-                  rounded
-                >
+                <ThemedText type="body" weight="semiBold">
+                  Nombre completo
+                </ThemedText>
+                <View style={styles.inputContainer}>
+                  <View style={styles.iconContainer}>
+                    <IconSymbol
+                      name="person.fill"
+                      size={20}
+                      color={Colors[colorScheme].textSecondary}
+                    />
+                  </View>
+                  <View style={styles.inputDivider} />
                   <TextInput
                     style={[styles.input, { color: Colors[colorScheme].text }]}
                     placeholder="Ingresa tu nombre completo"
@@ -319,7 +323,7 @@ export default function EditProfileScreen() {
                     value={displayName}
                     onChangeText={setDisplayName}
                   />
-                </ThemedView>
+                </View>
                 {formErrors.displayName && (
                   <ThemedText type="caption" style={styles.errorText}>
                     {formErrors.displayName}
@@ -328,12 +332,10 @@ export default function EditProfileScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <ThemedText type="body">Posición preferida</ThemedText>
-                <ThemedView
-                  style={styles.positionsContainer}
-                  variant="secondary"
-                  rounded
-                >
+                <ThemedText type="body" weight="semiBold">
+                  Posición preferida
+                </ThemedText>
+                <View style={styles.positionsContainer}>
                   {POSITIONS.map((pos) => (
                     <TouchableOpacity
                       key={pos.id}
@@ -354,16 +356,22 @@ export default function EditProfileScreen() {
                       </ThemedText>
                     </TouchableOpacity>
                   ))}
-                </ThemedView>
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <ThemedText type="body">Zona donde juegas</ThemedText>
-                <ThemedView
-                  style={styles.inputContainer}
-                  variant="secondary"
-                  rounded
-                >
+                <ThemedText type="body" weight="semiBold">
+                  Zona donde juegas
+                </ThemedText>
+                <View style={styles.inputContainer}>
+                  <View style={styles.iconContainer}>
+                    <IconSymbol
+                      name="location.fill"
+                      size={20}
+                      color={Colors[colorScheme].textSecondary}
+                    />
+                  </View>
+                  <View style={styles.inputDivider} />
                   <TextInput
                     style={[styles.input, { color: Colors[colorScheme].text }]}
                     placeholder="Ej: Norte, Sur, Centro"
@@ -371,7 +379,7 @@ export default function EditProfileScreen() {
                     value={zone}
                     onChangeText={setZone}
                   />
-                </ThemedView>
+                </View>
               </View>
             </View>
 
@@ -381,48 +389,52 @@ export default function EditProfileScreen() {
                 Nombre de usuario
               </ThemedText>
 
-              <ThemedView
-                style={styles.usernameDisplay}
-                variant="secondary"
-                rounded
-              >
+              <View style={styles.usernameBox}>
                 <View style={styles.usernameRow}>
-                  <ThemedText type="body" weight="semiBold">
-                    @{profile?.username || "Sin nombre de usuario"}
-                  </ThemedText>
-                  <Button
-                    title="Cambiar"
-                    size="small"
-                    variant="ghost"
+                  <View style={styles.usernameInfoContainer}>
+                    <ThemedText type="body" weight="semiBold">
+                      @{profile?.username || "Sin nombre de usuario"}
+                    </ThemedText>
+                    <ThemedText
+                      type="caption"
+                      secondary
+                      style={styles.usernameHint}
+                    >
+                      Tu identificador único en la plataforma
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.changeUsernameBtn}
                     onPress={() => setShowUsernameModal(true)}
-                  />
+                  >
+                    <ThemedText
+                      style={styles.changeUsernameText}
+                      weight="semiBold"
+                    >
+                      Cambiar
+                    </ThemedText>
+                  </TouchableOpacity>
                 </View>
-                <ThemedText
-                  type="caption"
-                  secondary
-                  style={styles.usernameHint}
-                >
-                  Tu identificador único en la plataforma
-                </ThemedText>
-              </ThemedView>
+              </View>
             </View>
 
             {/* Botones de acción */}
             <View style={styles.actionsContainer}>
-              <Button
-                title="Cancelar"
-                variant="outlined"
-                size="medium"
+              <TouchableOpacity
+                style={styles.cancelButton}
                 onPress={() => router.back()}
-                style={styles.actionButton}
-              />
-              <Button
-                title={isLoading ? "Guardando..." : "Guardar cambios"}
-                size="medium"
+              >
+                <ThemedText style={styles.cancelText}>Cancelar</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
                 onPress={handleSaveChanges}
                 disabled={isLoading}
-                style={styles.actionButton}
-              />
+              >
+                <ThemedText style={styles.saveText}>
+                  {isLoading ? "Guardando..." : "Guardar cambios"}
+                </ThemedText>
+              </TouchableOpacity>
             </View>
 
             {error && (
@@ -459,47 +471,49 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.l,
-    gap: Spacing.m,
+    padding: Spacing.m,
+    paddingHorizontal: Spacing.l,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    marginRight: Spacing.m,
   },
   scrollContent: {
-    padding: Spacing.l,
     paddingBottom: Spacing.xxl,
   },
   photoSection: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.l,
+    paddingVertical: Spacing.l,
   },
   photoContainer: {
     position: "relative",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: Colors.light.primary,
     marginBottom: Spacing.s,
   },
   profilePhoto: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
   },
   photoPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.light.primary + "40",
+    backgroundColor: "#F0F0F0",
   },
   photoPlaceholderText: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: "bold",
     color: Colors.light.primary,
   },
@@ -510,7 +524,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 60,
+    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -519,34 +533,58 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: Colors.light.primary,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: "white",
   },
   photoHint: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.s,
+    fontSize: 12,
   },
   formSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.m,
+    paddingHorizontal: Spacing.l,
   },
   sectionTitle: {
     marginBottom: Spacing.m,
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.text,
   },
   inputGroup: {
     marginBottom: Spacing.m,
   },
   inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Shape.radius.m,
     marginTop: Spacing.xs,
+    backgroundColor: "white",
+  },
+  iconContainer: {
     paddingHorizontal: Spacing.m,
-    paddingVertical: Platform.OS === "ios" ? Spacing.s : 0,
+    paddingVertical: Spacing.s,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 48,
+  },
+  inputDivider: {
+    width: 1,
+    height: "70%",
+    backgroundColor: Colors.light.border,
   },
   input: {
+    flex: 1,
     fontSize: 16,
-    height: 50,
+    height: 46,
+    paddingVertical: Spacing.s,
+    paddingHorizontal: Spacing.m,
   },
   inputError: {
     borderWidth: 1,
@@ -555,21 +593,22 @@ const styles = StyleSheet.create({
   errorText: {
     color: Colors.light.danger,
     marginTop: Spacing.xs,
+    fontSize: 12,
   },
   positionsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.s,
-    padding: Spacing.m,
-    marginTop: Spacing.xs,
+    marginTop: Spacing.s,
   },
   positionChip: {
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: Colors.light.border,
     marginBottom: Spacing.xs,
+    backgroundColor: "white",
   },
   selectedPosition: {
     backgroundColor: Colors.light.primary,
@@ -579,14 +618,67 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
   },
+  usernameBox: {
+    padding: Spacing.m,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Shape.radius.m,
+    marginTop: Spacing.xs,
+    backgroundColor: "white",
+  },
+  usernameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  usernameInfoContainer: {
+    flex: 1,
+  },
+  usernameHint: {
+    marginTop: Spacing.xs,
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  changeUsernameBtn: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.m,
+  },
+  changeUsernameText: {
+    color: Colors.light.primary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: Spacing.m,
+    paddingHorizontal: Spacing.l,
+    marginTop: Spacing.xl,
   },
-  actionButton: {
+  cancelButton: {
     flex: 1,
-    marginHorizontal: Spacing.xs,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.m,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Shape.radius.m,
+  },
+  cancelText: {
+    color: Colors.light.text,
+    fontWeight: "500",
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.light.primary,
+    borderRadius: Shape.radius.m,
+  },
+  saveText: {
+    color: "white",
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
@@ -595,19 +687,5 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.m,
-  },
-  usernameSection: {
-    marginBottom: Spacing.m,
-  },
-  usernameDisplay: {
-    padding: Spacing.m,
-  },
-  usernameRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  usernameHint: {
-    marginTop: Spacing.xs,
   },
 });
