@@ -202,11 +202,6 @@ export function HistoricalMatchCard({
       {/* Jugadores */}
       <View style={styles.playersStatsContainer}>
         <ThemedText type="caption" secondary>
-          {match.players.filter((p) => p.status === "confirmed").length}{" "}
-          jugadores participaron
-        </ThemedText>
-
-        <ThemedText type="caption" secondary>
           Organizado por: {match.creatorName}
         </ThemedText>
       </View>
