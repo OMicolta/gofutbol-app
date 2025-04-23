@@ -23,7 +23,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { useAuthStore, UserProfile } from "./authStore";
-import { Field } from "./fieldStore";
 
 export type MatchType = "5v5" | "6v6" | "7v7" | "11v11" | "libre";
 export type MatchStatus = "open" | "full" | "cancelled" | "finished";
@@ -726,22 +725,23 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
             throw new Error("Has sido removido de este partido");
           }
 
-          // Actualizar estado a confirmado
+          // Actualizar estado a confirmado (evitando valores undefined)
+          const assignedTeam =
+            teamPreference || player.team || getBalancedTeam(matchData.players);
           matchData.players[playerIndex] = {
-            ...player,
+            userId: player.userId,
+            displayName: player.displayName || "Usuario",
+            photoURL: player.photoURL || null,
             status: "confirmed",
-            team:
-              teamPreference ||
-              player.team ||
-              getBalancedTeam(matchData.players),
+            team: assignedTeam,
             joinedAt: Timestamp.now(),
           };
         } else {
-          // Añadir al usuario como jugador
+          // Añadir al usuario como jugador (evitando valores undefined)
           matchData.players.push({
             userId,
             displayName: user.displayName || "Usuario",
-            photoURL: user.photoURL,
+            photoURL: user.photoURL || null,
             team: teamPreference || getBalancedTeam(matchData.players),
             status: "confirmed",
             joinedAt: Timestamp.now(),
@@ -817,9 +817,12 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
           throw new Error("No estás en este partido");
         }
 
-        // Actualizar estado a declinado
+        // Actualizar estado a declinado (evitando valores undefined)
+        const player = matchData.players[playerIndex];
         matchData.players[playerIndex] = {
-          ...matchData.players[playerIndex],
+          userId: player.userId,
+          displayName: player.displayName || "Usuario",
+          photoURL: player.photoURL || null,
           status: "declined",
           team: null,
         };
@@ -911,19 +914,22 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
             throw new Error("El usuario ya está invitado a este partido");
           }
 
-          // Actualizar estado a invitado
+          // Actualizar estado a invitado (evitando valores undefined)
           matchData.players[playerIndex] = {
-            ...player,
+            userId: player.userId,
+            displayName: player.displayName || "Usuario",
+            photoURL: player.photoURL || null,
+            team: player.team || null,
             status: "invited",
             invitedBy: invitedByUserId,
             invitedAt: Timestamp.now(),
           };
         } else {
-          // Añadir al usuario como invitado
+          // Añadir al usuario como invitado (evitando valores undefined)
           matchData.players.push({
             userId: invitedUserId,
             displayName: invitedUserData.displayName || "Usuario",
-            photoURL: invitedUserData.photoURL,
+            photoURL: invitedUserData.photoURL || null,
             team: null,
             status: "invited",
             invitedBy: invitedByUserId,
@@ -996,9 +1002,12 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
           throw new Error("No tienes una invitación pendiente");
         }
 
-        // Actualizar estado a declinado
+        // Actualizar estado a declinado (evitando valores undefined)
+        const player = matchData.players[playerIndex];
         matchData.players[playerIndex] = {
-          ...matchData.players[playerIndex],
+          userId: player.userId,
+          displayName: player.displayName || "Usuario",
+          photoURL: player.photoURL || null,
           status: "declined",
           team: null,
         };
@@ -1064,10 +1073,15 @@ export const useMatchStore = create<MatchState>()((set, get) => ({
           }
         }
 
-        // Actualizar el equipo
+        // Actualizar el equipo (evitando valores undefined)
+        const player = matchData.players[playerIndex];
         matchData.players[playerIndex] = {
-          ...matchData.players[playerIndex],
+          userId: player.userId,
+          displayName: player.displayName || "Usuario",
+          photoURL: player.photoURL || null,
+          status: player.status,
           team: newTeam,
+          joinedAt: player.joinedAt || null,
         };
 
         // Actualizar el partido
