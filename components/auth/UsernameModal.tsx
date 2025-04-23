@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     zIndex: 9999,
   },
   dismissArea: {
@@ -216,14 +216,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalWrapper: {
-    width: "90%",
+    width: "94%",
     maxWidth: 480,
     borderRadius: Shape.radius.l,
     overflow: "hidden",
   },
   modalContainer: {
     width: "100%",
-    maxHeight: "85%",
     borderRadius: Shape.radius.l,
     ...Platform.select({
       ios: {
@@ -249,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSizes.l,
   },
   closeButtonContainer: {
-    padding: 4,
+    padding: Spacing.xs,
   },
   closeButton: {
     width: 32,
@@ -257,15 +256,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: `${Colors.light.textDisabled}15`,
   },
   separator: {
     height: 1,
     width: "100%",
-    backgroundColor: "rgba(150, 150, 150, 0.2)",
-    marginBottom: Spacing.s,
+    backgroundColor: `${Colors.light.border}50`,
   },
   contentContainer: {
-    paddingHorizontal: Spacing.m,
-    paddingBottom: Spacing.l,
+    width: "100%",
   },
 });

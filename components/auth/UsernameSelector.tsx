@@ -25,6 +25,9 @@ interface UsernameSelectorProps {
   suggestionsEnabled?: boolean;
 }
 
+// Simulación de nombres de usuario existentes para modo de prueba
+const MOCK_EXISTING_USERNAMES = ["admin", "test", "usuario1", "futbolista"];
+
 export function UsernameSelector({
   initialUsername = "",
   displayName = "",
@@ -38,6 +41,7 @@ export function UsernameSelector({
   const [isAvailable, setIsAvailable] = useState(false);
   const [wasChecked, setWasChecked] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [useTestMode, setUseTestMode] = useState(false);
 
   // Generar sugerencias basadas en el nombre de usuario
   useEffect(() => {
@@ -69,6 +73,11 @@ export function UsernameSelector({
     }
   }, [displayName, suggestionsEnabled]);
 
+  // Verificar disponibilidad en modo de prueba
+  const checkAvailabilityTestMode = (usernameToCheck: string) => {
+    return !MOCK_EXISTING_USERNAMES.includes(usernameToCheck);
+  };
+
   // Verificar disponibilidad del nombre de usuario
   const checkAvailability = async (usernameToCheck: string) => {
     if (!usernameToCheck || usernameToCheck.length < 3) {
@@ -81,14 +90,30 @@ export function UsernameSelector({
     setWasChecked(false);
 
     try {
-      // Verificar si el username ya existe en Firestore
-      const usernameDoc = await getDoc(doc(db, "usernames", usernameToCheck));
-      setIsAvailable(!usernameDoc.exists());
-      setWasChecked(true);
-    } catch (error) {
-      console.error("Error al verificar nombre de usuario:", error);
-      setIsAvailable(false);
-      setWasChecked(true);
+      if (useTestMode) {
+        // Usar modo de prueba sin acceso a Firebase
+        setTimeout(() => {
+          setIsAvailable(checkAvailabilityTestMode(usernameToCheck));
+          setWasChecked(true);
+          setIsChecking(false);
+        }, 500); // Simulamos un pequeño delay
+      } else {
+        // Intentar verificar con Firestore
+        try {
+          const usernameDoc = await getDoc(
+            doc(db, "usernames", usernameToCheck)
+          );
+          setIsAvailable(!usernameDoc.exists());
+          setWasChecked(true);
+        } catch (error) {
+          console.error("Error al verificar nombre de usuario:", error);
+          // Si hay error, cambiar a modo de prueba
+          setUseTestMode(true);
+          // Y volver a verificar en modo prueba
+          setIsAvailable(checkAvailabilityTestMode(usernameToCheck));
+          setWasChecked(true);
+        }
+      }
     } finally {
       setIsChecking(false);
     }
@@ -152,13 +177,7 @@ export function UsernameSelector({
           @
         </ThemedText>
         <TextInput
-          style={[
-            styles.input,
-            { color: Colors[colorScheme].text },
-            username.length > 0 &&
-              wasChecked &&
-              (isAvailable ? styles.validInput : styles.invalidInput),
-          ]}
+          style={[styles.input, { color: Colors[colorScheme].text }]}
           value={username}
           onChangeText={handleUsernameChange}
           placeholder="nombreusuario"
@@ -194,13 +213,24 @@ export function UsernameSelector({
         </ThemedText>
       ) : null}
 
+      {useTestMode && (
+        <ThemedText
+          style={[
+            styles.testModeMessage,
+            { color: Colors[colorScheme].textSecondary },
+          ]}
+        >
+          Usando modo de prueba (sin conexión)
+        </ThemedText>
+      )}
+
       {suggestionsEnabled && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
-          <ThemedText type="body" secondary>
+          <ThemedText type="body" secondary style={styles.suggestionsTitle}>
             Sugerencias:
           </ThemedText>
           <View style={styles.suggestionsList}>
-            {suggestions.map((suggestion, index) => (
+            {suggestions.slice(0, 3).map((suggestion, index) => (
               <ThemedView
                 key={index}
                 style={styles.suggestionItem}
@@ -246,32 +276,32 @@ const styles = StyleSheet.create({
     padding: Spacing.m,
   },
   title: {
-    marginBottom: Spacing.s,
+    marginBottom: Spacing.xs,
     textAlign: "center",
   },
   subtitle: {
     marginBottom: Spacing.m,
     textAlign: "center",
+    fontSize: Typography.fontSizes.s,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderRadius: Shape.radius.m,
-    paddingHorizontal: Spacing.m,
     marginBottom: Spacing.s,
-    height: 56,
+    paddingHorizontal: Spacing.m,
+    height: 48,
   },
   atSymbol: {
-    fontSize: Typography.fontSizes.xl,
+    fontSize: 16,
+    fontWeight: "bold",
     marginRight: Spacing.xs,
-    fontWeight: Typography.fontWeights.semiBold,
-    color: Colors.light.primary, // Este color se sobrescribirá con el hook useThemeColor en el componente
   },
   input: {
     flex: 1,
-    fontSize: Typography.fontSizes.l,
-    paddingVertical: Spacing.s,
+    height: 46,
+    fontSize: 16,
   },
   validInput: {
     borderColor: Colors.light.success,
@@ -280,42 +310,51 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.danger,
   },
   activityIndicator: {
-    marginVertical: Spacing.s,
+    marginVertical: Spacing.xs,
   },
   availabilityMessage: {
-    marginBottom: Spacing.m,
-    fontWeight: Typography.fontWeights.semiBold,
+    textAlign: "center",
+    marginBottom: Spacing.s,
+    fontSize: Typography.fontSizes.xs,
+  },
+  testModeMessage: {
+    textAlign: "center",
+    marginBottom: Spacing.s,
+    fontSize: Typography.fontSizes.xs,
+    fontStyle: "italic",
   },
   suggestionsContainer: {
-    marginTop: Spacing.m,
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.s,
+  },
+  suggestionsTitle: {
+    marginBottom: Spacing.xs,
+    textAlign: "center",
+    fontSize: Typography.fontSizes.s,
   },
   suggestionsList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: Spacing.s,
-    gap: Spacing.s,
+    justifyContent: "center",
+    gap: 8,
   },
   suggestionItem: {
-    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Shape.radius.m,
     marginBottom: Spacing.xs,
   },
   suggestionTouchable: {
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: 20,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.s,
   },
   confirmButton: {
-    marginTop: Spacing.m,
-    height: 56,
-    borderRadius: Shape.radius.m,
+    marginTop: Spacing.s,
   },
   cancelButton: {
-    marginTop: Spacing.m,
+    marginTop: Spacing.s,
     alignItems: "center",
-    padding: Spacing.s,
   },
   cancelText: {
-    fontWeight: Typography.fontWeights.semiBold,
+    fontSize: Typography.fontSizes.s,
   },
 });
