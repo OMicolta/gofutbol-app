@@ -15,7 +15,10 @@ service cloud.firestore {
     // Reglas para la colección de usuarios
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      // Permitir escritura si es el propietario o si es una actualización de stats
+      allow write: if isOwner(userId) || 
+        (isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']));
       
       // Documentos anidados del usuario
       match /{document=**} {
@@ -59,6 +62,14 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Restricciones de escritura podrían ser más estrictas según tu aplicación
       allow write: if isAuthenticated();
+    }
+    
+    // Reglas para calificaciones
+    match /ratings/{ratingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ratedByUserId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.ratedByUserId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.ratedByUserId == request.auth.uid;
     }
     
     // Regla por defecto - denegar todo lo demás
