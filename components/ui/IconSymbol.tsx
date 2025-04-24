@@ -49,6 +49,8 @@ const MAPPING = {
   "search.field": { type: "material", name: "search" },
   "field.map": { type: "material", name: "map" },
   "pin.field": { type: "material", name: "pin-drop" },
+  // Icono para autenticación con Google
+  "google.auth": { type: "community", name: "google" },
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;

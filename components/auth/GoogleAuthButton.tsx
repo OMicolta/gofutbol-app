@@ -5,6 +5,7 @@ import * as Google from "expo-auth-session/providers/google";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/Button";
 import { Spacing } from "@/constants/Colors";
+import Constants from "expo-constants";
 
 interface GoogleAuthButtonProps {
   text?: string;
@@ -20,12 +21,20 @@ export function GoogleAuthButton({
   const { processGoogleCredential } = useAuthStore();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  // Obtener IDs de cliente de las variables de entorno
+  const { firebaseWebClientId, firebaseIosClientId, firebaseAndroidClientId } =
+    Constants.expoConfig?.extra || {};
+
   // Configurar solicitud de autenticación de Google
   const [request, response, promptAsync] = Google.useAuthRequest({
-    // Reemplaza estos valores con tus propios IDs de cliente
-    clientId: "TU_WEB_CLIENT_ID",
-    iosClientId: "TU_IOS_CLIENT_ID",
-    androidClientId: "TU_ANDROID_CLIENT_ID",
+    clientId: firebaseWebClientId,
+    iosClientId: firebaseIosClientId,
+    androidClientId: firebaseAndroidClientId,
+    // Configurar URL de redirección para expo
+    redirectUri: `${
+      Constants.expoConfig?.scheme || "com.gofutbol.app"
+    }://oauth2/redirect`,
+    scopes: ["profile", "email"],
   });
 
   // Monitorear cambios en la respuesta de autenticación
@@ -66,7 +75,7 @@ export function GoogleAuthButton({
       fullWidth
       onPress={handleLogin}
       disabled={isAuthenticating || !request}
-      leftIcon={isAuthenticating ? undefined : "chevron.right"}
+      leftIcon={isAuthenticating ? undefined : "google.auth"}
     />
   );
 }

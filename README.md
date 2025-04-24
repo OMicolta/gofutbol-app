@@ -96,32 +96,43 @@ Para utilizar todas las funcionalidades, es necesario configurar un proyecto en 
 2. Habilitar Authentication (Email/Password y Google)
 3. Configurar Firestore Database
 4. Configurar Storage
-5. Crear un archivo `config/firebase.ts` con tu configuración:
+5. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
-```typescript
-// config/firebase.ts
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID",
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-export { auth, db, storage };
 ```
+# Firebase Core Configuration
+FIREBASE_API_KEY=tu_api_key
+FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
+FIREBASE_PROJECT_ID=tu-proyecto
+FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=123456789012
+FIREBASE_APP_ID=1:123456789012:web:abc123def456
+FIREBASE_MEASUREMENT_ID=G-ABCDEF1234
+
+# Google Auth Client IDs (OAuth)
+FIREBASE_WEB_CLIENT_ID=123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+FIREBASE_ANDROID_CLIENT_ID=123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+FIREBASE_IOS_CLIENT_ID=123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com
+
+# Expo Configuration
+EAS_PROJECT_ID=tu-proyecto-expo
+```
+
+### Configuración de Autenticación con Google
+
+Para habilitar el inicio de sesión con Google:
+
+1. Ve a la [Consola de Google Cloud Platform](https://console.cloud.google.com/)
+2. Crea un nuevo proyecto o selecciona uno existente
+3. Ve a "APIs y Servicios" > "Credenciales"
+4. Configura la pantalla de consentimiento OAuth
+5. Crea credenciales de ID de cliente OAuth para:
+
+   - Web: Para autenticación en navegadores web
+   - Android: Configura el paquete y la huella digital SHA-1
+   - iOS: Configura el ID del paquete
+
+6. Copia los IDs de cliente generados y añádelos a tu archivo `.env` en las variables correspondientes
+7. En Firebase Console, habilita Google como proveedor de autenticación en la sección Authentication
 
 ## Estructura del Proyecto
 
