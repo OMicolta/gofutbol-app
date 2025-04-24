@@ -194,7 +194,12 @@ export function InvitePlayersModal({
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.divider} />
+              <View
+                style={[
+                  styles.divider,
+                  { backgroundColor: Colors[colorScheme].border },
+                ]}
+              />
 
               {/* Campo de búsqueda mejorado */}
               <View style={styles.searchWrapper}>
@@ -233,7 +238,9 @@ export function InvitePlayersModal({
                       onPress={clearSearch}
                       style={styles.clearButton}
                     >
-                      <ThemedText style={styles.clearButtonText}>✕</ThemedText>
+                      <ThemedText secondary style={styles.clearButtonText}>
+                        ✕
+                      </ThemedText>
                     </TouchableOpacity>
                   )}
                 </ThemedView>
@@ -271,6 +278,7 @@ export function InvitePlayersModal({
                     <TouchableOpacity
                       style={[
                         styles.userItem,
+                        { borderBottomColor: Colors[colorScheme].border },
                         selectedUsers.some((u) => u.uid === item.uid) &&
                           styles.selectedUserItem,
                       ]}
@@ -284,8 +292,21 @@ export function InvitePlayersModal({
                             contentFit="cover"
                           />
                         ) : (
-                          <ThemedView style={styles.avatarPlaceholder} rounded>
-                            <ThemedText style={styles.avatarText}>
+                          <ThemedView
+                            style={[
+                              styles.avatarPlaceholder,
+                              {
+                                backgroundColor: `${Colors[colorScheme].primary}20`,
+                              },
+                            ]}
+                            rounded
+                          >
+                            <ThemedText
+                              style={[
+                                styles.avatarText,
+                                { color: Colors[colorScheme].primary },
+                              ]}
+                            >
                               {item.displayName
                                 ?.substring(0, 1)
                                 .toUpperCase() || "U"}
@@ -322,7 +343,12 @@ export function InvitePlayersModal({
 
               {/* Botones de acción */}
               {selectedUsers.length > 0 && (
-                <View style={styles.actionButtons}>
+                <View
+                  style={[
+                    styles.actionButtons,
+                    { borderTopColor: Colors[colorScheme].border },
+                  ]}
+                >
                   <Button
                     title={`Invitar ${selectedUsers.length} jugador${
                       selectedUsers.length !== 1 ? "es" : ""
@@ -360,8 +386,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: "100%",
-    backgroundColor: "white", // El color se aplicará vía ThemedView
-    borderRadius: Shape.radius.m,
     overflow: "hidden",
   },
   modalHeader: {
@@ -387,7 +411,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
     width: "100%",
   },
   searchWrapper: {
@@ -403,7 +426,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   searchContainerFocused: {
-    borderColor: Colors.light.primary + "50",
+    borderColor: "rgba(29, 185, 84, 0.3)", // Color primario con transparencia
   },
   searchPersonIcon: {
     marginRight: Spacing.s,
@@ -425,7 +448,6 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: Colors.light.textSecondary,
   },
   searchHint: {
     paddingHorizontal: Spacing.l,
@@ -452,10 +474,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.l,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderLight,
   },
   selectedUserItem: {
-    backgroundColor: Colors.light.primary + "10",
+    backgroundColor: "rgba(29, 185, 84, 0.1)", // Color primario con más transparencia
   },
   userInfo: {
     flexDirection: "row",
@@ -473,13 +494,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.light.primary + "20",
     marginRight: Spacing.m,
   },
   avatarText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: Colors.light.primary,
   },
   emptyResults: {
     padding: Spacing.l,
@@ -491,6 +510,5 @@ const styles = StyleSheet.create({
   actionButtons: {
     padding: Spacing.l,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.borderLight,
   },
 });

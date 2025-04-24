@@ -60,6 +60,7 @@ export default function MatchDetailScreen() {
 
   const [match, setMatch] = useState<Match | null>(null);
   const [showRatingForm, setShowRatingForm] = useState(false);
+  const [activeTab, setActiveTab] = useState("details"); // "details" o "players"
 
   // Determinar si se está viendo un partido histórico
   const isHistoricalMatch = isHistorical === "true";
@@ -338,171 +339,205 @@ export default function MatchDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header con botón de volver */}
-      <SafeAreaView edges={["top"]} style={styles.safeAreaTop}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ThemedView
-            style={styles.backButtonCircle}
-            variant="card"
-            rounded
-            shadow="s"
+      {/* Header con botón de volver y título */}
+      <SafeAreaView
+        edges={["top"]}
+        style={[
+          styles.header,
+          {
+            backgroundColor: Colors[colorScheme].backgroundSecondary,
+            borderBottomColor: Colors[colorScheme].border,
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
           >
             <IconSymbol
               name="arrow.left"
               size={24}
               color={Colors[colorScheme].text}
             />
-          </ThemedView>
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <ThemedText type="title" style={styles.headerTitle}>
+            Partido {match.type}
+          </ThemedText>
+          <View style={styles.headerRightPlaceholder} />
+        </View>
       </SafeAreaView>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Animated.View entering={FadeIn.duration(300)}>
-          {/* Header con título y fecha */}
-          <Card style={styles.headerCard}>
-            <View style={styles.headerContent}>
-              <ThemedText type="title" style={styles.matchTitle}>
-                Partido {match.type}
-              </ThemedText>
-            </View>
+        {/* Sección de fecha y hora */}
+        <View
+          style={[
+            styles.dateContainer,
+            {
+              backgroundColor:
+                colorScheme === "dark" ? "rgba(0, 200, 83, 0.15)" : "#E8F5E9",
+            },
+          ]}
+        >
+          <IconSymbol
+            name="calendar"
+            size={20}
+            color="#00C853"
+            style={styles.dateIcon}
+          />
+          <ThemedText style={styles.dateText} weight="semiBold">
+            {formattedDate} - {formattedTime}
+          </ThemedText>
+        </View>
 
-            <View style={styles.dateContainer}>
-              <ThemedView style={styles.dateChip} variant="secondary" rounded>
-                <ThemedText
-                  style={styles.dateText}
-                  weight="semiBold"
-                  type="body"
-                >
-                  {formattedDate} • {formattedTime}
-                </ThemedText>
-              </ThemedView>
-            </View>
+        {/* Sección de ubicación */}
+        <View style={styles.locationContainer}>
+          <View style={styles.locationHeader}>
+            <IconSymbol
+              name="location.fill"
+              size={20}
+              color="#00C853"
+              style={styles.locationIcon}
+            />
+            <ThemedText style={styles.locationTitle} weight="semiBold">
+              Ubicación
+            </ThemedText>
+          </View>
 
-            {match.status === "cancelled" && (
-              <ThemedView style={styles.statusBadge} rounded="m">
-                <ThemedText style={styles.statusText} weight="semiBold">
-                  Cancelado
-                </ThemedText>
-              </ThemedView>
-            )}
-          </Card>
+          {match.fieldName && (
+            <ThemedText weight="semiBold" style={styles.fieldName}>
+              {match.fieldName}
+            </ThemedText>
+          )}
 
-          {/* Sección de ubicación */}
-          <Card style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <IconSymbol
-                name="paperplane.fill"
-                size={20}
-                color={Colors[colorScheme].primary}
-                style={styles.sectionIcon}
+          {match.address && (
+            <ThemedText
+              style={[
+                styles.addressText,
+                { color: Colors[colorScheme].textSecondary },
+              ]}
+            >
+              {match.address}
+            </ThemedText>
+          )}
+
+          {match.location?.latitude && match.location?.longitude && (
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: match.location.latitude,
+                  longitude: match.location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                showsUserLocation
+              >
+                <Marker
+                  coordinate={{
+                    latitude: match.location.latitude,
+                    longitude: match.location.longitude,
+                  }}
+                  title={match.fieldName || "Ubicación del partido"}
+                />
+              </MapView>
+              <Image
+                source={{
+                  uri: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Google_Maps_icon.svg",
+                }}
+                style={styles.googleLogo}
               />
-              <ThemedText
-                type="subtitle"
-                weight="semiBold"
-                style={styles.sectionTitle}
-              >
-                Ubicación
-              </ThemedText>
             </View>
+          )}
+        </View>
 
-            {match.location?.latitude && match.location?.longitude ? (
-              <>
+        {/* Tabs de navegación */}
+        <View
+          style={[
+            styles.tabContainer,
+            {
+              borderColor: Colors[colorScheme].border,
+              backgroundColor: Colors[colorScheme].backgroundSecondary,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "details" && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab("details")}
+          >
+            <ThemedText
+              style={[
+                styles.tabText,
+                { color: Colors[colorScheme].textSecondary },
+                activeTab === "details" && styles.activeTabText,
+              ]}
+              weight={activeTab === "details" ? "semiBold" : "regular"}
+            >
+              Detalles
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "players" && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab("players")}
+          >
+            <ThemedText
+              style={[
+                styles.tabText,
+                { color: Colors[colorScheme].textSecondary },
+                activeTab === "players" && styles.activeTabText,
+              ]}
+              weight={activeTab === "players" ? "semiBold" : "regular"}
+            >
+              Jugadores
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* Contenido según la tab activa */}
+        {activeTab === "details" ? (
+          <View style={styles.tabContent}>
+            <View style={styles.detailsSection}>
+              <View
+                style={[
+                  styles.detailRow,
+                  { borderBottomColor: Colors[colorScheme].border },
+                ]}
+              >
                 <ThemedText
-                  type="body"
-                  weight="semiBold"
-                  style={styles.fieldName}
+                  style={[
+                    styles.detailLabel,
+                    { color: Colors[colorScheme].textSecondary },
+                  ]}
                 >
-                  {match.fieldName || ""}
-                </ThemedText>
-
-                {match.address && (
-                  <ThemedText type="body" secondary style={styles.address}>
-                    {match.address}
-                  </ThemedText>
-                )}
-
-                <View style={styles.mapContainer}>
-                  <MapView
-                    style={styles.map}
-                    initialRegion={{
-                      latitude: match.location.latitude,
-                      longitude: match.location.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                    showsUserLocation
-                  >
-                    <Marker
-                      coordinate={{
-                        latitude: match.location.latitude,
-                        longitude: match.location.longitude,
-                      }}
-                      title={match.fieldName || "Ubicación del partido"}
-                    />
-                  </MapView>
-
-                  <Button
-                    title="Ver en Mapa"
-                    variant="outlined"
-                    size="small"
-                    leftIcon="paperplane.fill"
-                    onPress={handleOpenMap}
-                    style={styles.mapButton}
-                  />
-                </View>
-              </>
-            ) : (
-              <ThemedView
-                style={styles.noLocationContainer}
-                variant="secondary"
-                rounded
-              >
-                <ThemedText type="body" secondary style={styles.noLocationText}>
-                  No hay ubicación definida para este partido
-                </ThemedText>
-              </ThemedView>
-            )}
-          </Card>
-
-          {/* Sección de detalles */}
-          <Card style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <IconSymbol
-                name="soccer.ball"
-                size={20}
-                color={Colors[colorScheme].primary}
-                style={styles.sectionIcon}
-              />
-              <ThemedText
-                type="subtitle"
-                weight="semiBold"
-                style={styles.sectionTitle}
-              >
-                Detalles
-              </ThemedText>
-            </View>
-
-            <View style={styles.detailRows}>
-              <View style={styles.detailRow}>
-                <ThemedText type="body" secondary>
                   Organizador:
                 </ThemedText>
-                <ThemedText type="body" weight="semiBold">
-                  {match.creatorName}
-                </ThemedText>
+                <ThemedText weight="semiBold">{match.creatorName}</ThemedText>
               </View>
 
-              <View style={styles.detailRow}>
-                <ThemedText type="body" secondary>
+              <View
+                style={[
+                  styles.detailRow,
+                  { borderBottomColor: Colors[colorScheme].border },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.detailLabel,
+                    { color: Colors[colorScheme].textSecondary },
+                  ]}
+                >
                   Nivel:
                 </ThemedText>
-                <ThemedText type="body">
+                <ThemedText>
                   {match.level === "beginner"
                     ? "Principiante"
                     : match.level === "intermediate"
@@ -513,114 +548,109 @@ export default function MatchDetailScreen() {
                 </ThemedText>
               </View>
 
-              <View style={styles.detailRow}>
-                <ThemedText type="body" secondary>
+              <View
+                style={[
+                  styles.detailRow,
+                  { borderBottomColor: Colors[colorScheme].border },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.detailLabel,
+                    { color: Colors[colorScheme].textSecondary },
+                  ]}
+                >
                   Jugadores:
                 </ThemedText>
-                <ThemedText type="body" weight="semiBold">
+                <ThemedText weight="semiBold">
                   {confirmedPlayers}/{match.maxPlayers}
                 </ThemedText>
               </View>
 
-              {match.price && (
-                <View style={styles.detailRow}>
-                  <ThemedText type="body" secondary>
-                    Precio:
-                  </ThemedText>
+              {match.description && (
+                <View
+                  style={[
+                    styles.descriptionSection,
+                    { borderBottomColor: Colors[colorScheme].border },
+                  ]}
+                >
                   <ThemedText
-                    type="body"
-                    weight="semiBold"
-                    style={styles.priceText}
+                    style={[
+                      styles.detailLabel,
+                      { color: Colors[colorScheme].textSecondary },
+                    ]}
                   >
-                    ${match.price.toLocaleString("es-CO")}
+                    Descripción:
                   </ThemedText>
+                  <ThemedText>{match.description}</ThemedText>
                 </View>
               )}
-            </View>
 
-            {match.description && (
-              <View style={styles.descriptionContainer}>
+              <View style={styles.uniformsSection}>
                 <ThemedText
-                  type="body"
-                  secondary
-                  style={styles.descriptionLabel}
+                  style={[
+                    styles.detailLabel,
+                    { color: Colors[colorScheme].textSecondary },
+                  ]}
                 >
-                  Descripción:
+                  Colores de uniforme:
                 </ThemedText>
-                <ThemedText type="body" style={styles.description}>
-                  {match.description}
-                </ThemedText>
-              </View>
-            )}
-
-            {/* Colores de uniforme */}
-            <View style={styles.uniformsContainer}>
-              <ThemedText type="body" secondary style={styles.uniformsLabel}>
-                Colores de uniforme:
-              </ThemedText>
-
-              <View style={styles.uniformsRow}>
-                <ThemedView
-                  style={styles.uniformBox}
-                  variant="secondary"
-                  rounded
-                >
-                  <ThemedText
-                    type="body"
-                    weight="semiBold"
-                    style={styles.teamLabel}
+                <View style={styles.uniformsRow}>
+                  <View
+                    style={[
+                      styles.uniformBox,
+                      {
+                        backgroundColor:
+                          colorScheme === "dark" ? Colors.dark.card : "#F5F5F5",
+                      },
+                    ]}
                   >
-                    Equipo A
-                  </ThemedText>
-                  <ThemedText type="body">
-                    {match.uniformA || "No especificado"}
-                  </ThemedText>
-                </ThemedView>
+                    <ThemedText weight="semiBold" style={styles.teamLabel}>
+                      Equipo A
+                    </ThemedText>
+                    <ThemedText>
+                      {match.uniformA || "No especificado"}
+                    </ThemedText>
+                  </View>
 
-                <ThemedView
-                  style={styles.uniformBox}
-                  variant="secondary"
-                  rounded
-                >
-                  <ThemedText
-                    type="body"
-                    weight="semiBold"
-                    style={styles.teamLabel}
+                  <View
+                    style={[
+                      styles.uniformBox,
+                      {
+                        backgroundColor:
+                          colorScheme === "dark" ? Colors.dark.card : "#F5F5F5",
+                      },
+                    ]}
                   >
-                    Equipo B
-                  </ThemedText>
-                  <ThemedText type="body">
-                    {match.uniformB || "No especificado"}
-                  </ThemedText>
-                </ThemedView>
+                    <ThemedText weight="semiBold" style={styles.teamLabel}>
+                      Equipo B
+                    </ThemedText>
+                    <ThemedText>
+                      {match.uniformB || "No especificado"}
+                    </ThemedText>
+                  </View>
+                </View>
               </View>
             </View>
-          </Card>
-
-          {/* Lista de jugadores */}
-          <Card style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <IconSymbol
-                name="person.fill"
-                size={20}
-                color={Colors[colorScheme].primary}
-                style={styles.sectionIcon}
-              />
-              <ThemedText
-                type="subtitle"
-                weight="semiBold"
-                style={styles.sectionTitle}
-              >
-                Jugadores
+          </View>
+        ) : (
+          <View style={styles.tabContent}>
+            <View style={styles.playersHeader}>
+              <ThemedText style={styles.playersCount} weight="semiBold">
+                Jugadores ({confirmedPlayers})
               </ThemedText>
-              {isCreator && !isMatchPast && match.status !== "cancelled" && (
+              {isCreator && !isMatchPast && (
                 <Button
-                  title="Invitar Jugadores"
+                  title="+ Invitar Jugadores"
                   size="small"
                   variant="outlined"
-                  leftIcon="person.fill"
                   onPress={() => setShowInviteModal(true)}
-                  style={styles.inviteButton}
+                  style={[
+                    styles.inviteButton,
+                    {
+                      backgroundColor: Colors[colorScheme].backgroundSecondary,
+                    },
+                  ]}
                 />
               )}
             </View>
@@ -632,11 +662,10 @@ export default function MatchDetailScreen() {
               onChangeTeam={handleChangeTeam}
               onRemovePlayer={isCreator ? handleRemovePlayer : undefined}
             />
-            {/* Jugadores invitados */}
+
             {isCreator && invitedPlayers.length > 0 && (
               <View style={styles.invitedPlayersSection}>
                 <ThemedText
-                  type="body"
                   weight="semiBold"
                   style={styles.invitedPlayersTitle}
                 >
@@ -645,90 +674,71 @@ export default function MatchDetailScreen() {
                 <InvitedPlayersList players={invitedPlayers} />
               </View>
             )}
-          </Card>
-
-          {/* Formulario de calificación (si el partido ya pasó) */}
-          {isMatchPast && isPlayerConfirmed && (
-            <Card style={styles.sectionCard}>
-              <View style={styles.ratingHeader}>
-                <View style={styles.sectionHeader}>
-                  <IconSymbol
-                    name="star.fill"
-                    size={20}
-                    color={Colors[colorScheme].primary}
-                    style={styles.sectionIcon}
-                  />
-                  <ThemedText type="subtitle" weight="semiBold">
-                    Calificar jugadores
-                  </ThemedText>
-                </View>
-                <Button
-                  title={showRatingForm ? "Ocultar" : "Calificar"}
-                  size="small"
-                  variant={showRatingForm ? "outlined" : "filled"}
-                  onPress={() => setShowRatingForm(!showRatingForm)}
-                />
-              </View>
-
-              {showRatingForm && (
-                <RatingForm matchId={match.id} players={match.players} />
-              )}
-            </Card>
-          )}
-
-          {/* Botones de acción para el creador */}
-          {isCreator && !isMatchPast && match.status !== "cancelled" && (
-            <View style={styles.creatorActions}>
-              <Button
-                title="Editar Partido"
-                size="medium"
-                variant="outlined"
-                leftIcon="pencil"
-                style={styles.editButton}
-                onPress={() => router.push(`/match/edit/${match.id}` as any)}
-              />
-
-              <Button
-                title="Cancelar Partido"
-                size="medium"
-                variant="outlined"
-                color="danger"
-                leftIcon="trash.fill"
-                style={styles.cancelButton}
-                onPress={handleCancelMatch}
-              />
-            </View>
-          )}
-        </Animated.View>
+          </View>
+        )}
       </ScrollView>
 
       {/* Botones de acción fijos en la parte inferior */}
-      {!isCreator && !isMatchPast && match.status !== "cancelled" && (
-        <SafeAreaView edges={["bottom"]} style={styles.bottomContainer}>
-          <ThemedView style={styles.actionBar} variant="card" shadow="m">
-            {isPlayerConfirmed ? (
-              <Button
-                title="Abandonar Partido"
-                size="medium"
-                variant="filled"
-                color="danger"
-                leftIcon="trash.fill"
-                fullWidth
-                onPress={handleLeave}
-              />
-            ) : (
-              <Button
-                title="Unirme al Partido"
-                size="medium"
-                leftIcon="plus"
-                fullWidth
-                disabled={match.status === "full"}
-                onPress={handleJoin}
-              />
-            )}
-          </ThemedView>
-        </SafeAreaView>
-      )}
+      <SafeAreaView
+        edges={["bottom"]}
+        style={[
+          styles.bottomContainer,
+          {
+            backgroundColor: Colors[colorScheme].backgroundSecondary,
+            borderTopColor: Colors[colorScheme].border,
+          },
+        ]}
+      >
+        {isCreator && !isMatchPast ? (
+          <View style={styles.creatorButtons}>
+            <TouchableOpacity
+              style={[
+                styles.cancelButton,
+                {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? "rgba(255, 59, 48, 0.15)"
+                      : "#FFEBEE",
+                },
+              ]}
+              onPress={handleCancelMatch}
+            >
+              <IconSymbol name="trash.fill" size={18} color="#FF3B30" />
+              <ThemedText style={styles.cancelButtonText}>
+                Cancelar Partido
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? "rgba(0, 200, 83, 0.15)"
+                      : "#E8F5E9",
+                },
+              ]}
+              onPress={() => router.push(`/match/edit/${match.id}` as any)}
+            >
+              <IconSymbol name="pencil" size={18} color="#00C853" />
+              <ThemedText style={styles.editButtonText}>
+                Editar Partido
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        ) : !isCreator && !isMatchPast && match.status !== "cancelled" ? (
+          <TouchableOpacity
+            style={styles.joinButton}
+            onPress={isPlayerConfirmed ? handleLeave : handleJoin}
+          >
+            <ThemedText style={styles.joinButtonText}>
+              {isPlayerConfirmed ? "Abandonar Partido" : "Unirme al Partido"}
+            </ThemedText>
+          </TouchableOpacity>
+        ) : null}
+      </SafeAreaView>
+
       {/* Modal para invitar jugadores */}
       <InvitePlayersModal
         visible={showInviteModal}
@@ -745,209 +755,236 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeAreaTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  backButton: {
-    margin: Spacing.m,
-  },
-  backButtonCircle: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 20,
-  },
-  scrollContent: {
-    padding: Spacing.l,
-    paddingTop: Spacing.xl * 2, // Espacio para el botón de volver
-    paddingBottom: 100, // Espacio para botones fijos
-  },
-  headerCard: {
-    marginBottom: Spacing.m,
-    overflow: "hidden",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
+  header: {
+    borderBottomWidth: 1,
   },
   headerContent: {
-    alignItems: "flex-start",
-  },
-  matchTitle: {
-    marginBottom: Spacing.xs,
-  },
-  dateContainer: {
-    marginTop: Spacing.xs,
-    alignItems: "flex-start",
-  },
-  dateChip: {
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    backgroundColor: Colors.light.primary + "20", // Semi-transparente
-  },
-  dateText: {
-    color: Colors.light.primary,
-  },
-  statusBadge: {
-    backgroundColor: Colors.light.danger + "20",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    alignSelf: "flex-start",
-    marginTop: Spacing.s,
-  },
-  statusText: {
-    color: Colors.light.danger,
-  },
-  sectionCard: {
-    marginBottom: Spacing.m,
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-  },
-  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.m,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  sectionIcon: {
-    marginRight: Spacing.xs,
+  backButton: {
+    padding: 8,
   },
-  sectionTitle: {
-    color: Colors.light.primary,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100, // Espacio para botones fijos en la parte inferior
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  dateIcon: {
+    marginRight: 8,
+  },
+  dateText: {
+    color: "#00C853", // Verde
+    fontSize: 14,
+  },
+  locationContainer: {
+    marginBottom: 16,
+  },
+  locationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  locationIcon: {
+    marginRight: 8,
+  },
+  locationTitle: {
+    fontSize: 16,
+    color: "#00C853", // Verde
   },
   fieldName: {
-    marginBottom: Spacing.xs,
+    fontSize: 16,
+    marginBottom: 4,
   },
-  address: {
-    marginBottom: Spacing.m,
+  addressText: {
+    fontSize: 14,
+    marginBottom: 8,
   },
   mapContainer: {
-    height: 180,
-    borderRadius: Shape.radius.m,
+    height: 120,
+    borderRadius: 8,
     overflow: "hidden",
-    marginBottom: Spacing.xs,
+    marginTop: 8,
   },
   map: {
-    width: "100%",
-    height: "100%",
+    flex: 1,
   },
-  mapButton: {
-    alignSelf: "flex-end",
-    marginTop: Spacing.s,
+  googleLogo: {
+    position: "absolute",
+    bottom: 5,
+    right: 5,
+    width: 28,
+    height: 28,
   },
-  noLocationContainer: {
-    padding: Spacing.m,
+  tabContainer: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
   },
-  noLocationText: {
-    textAlign: "center",
+  activeTabButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#00C853", // Verde
   },
-  detailRows: {
-    marginBottom: Spacing.m,
+  tabText: {
+    fontSize: 14,
+  },
+  activeTabText: {
+    color: "#00C853", // Verde
+  },
+  tabContent: {
+    flex: 1,
+  },
+  detailsSection: {
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: Spacing.s,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
   },
-  priceText: {
-    color: Colors.light.primary,
+  detailLabel: {},
+  descriptionSection: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
   },
-  descriptionContainer: {
-    marginBottom: Spacing.m,
-  },
-  descriptionLabel: {
-    marginBottom: Spacing.xs,
-  },
-  description: {
-    lineHeight: 22,
-  },
-  uniformsContainer: {
-    marginTop: Spacing.s,
-  },
-  uniformsLabel: {
-    marginBottom: Spacing.s,
+  uniformsSection: {
+    marginTop: 16,
   },
   uniformsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: Spacing.m,
+    marginTop: 8,
+    gap: 12,
   },
   uniformBox: {
     flex: 1,
-    padding: Spacing.m,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    padding: 12,
+    borderRadius: 8,
   },
   teamLabel: {
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
-  ratingHeader: {
+  playersHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.m,
+    marginBottom: 16,
   },
-  creatorActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: Spacing.l,
+  playersCount: {
+    fontSize: 16,
   },
-  editButton: {
-    flex: 1,
-    marginRight: Spacing.s,
+  inviteButton: {
+    borderColor: "#00C853",
+    borderWidth: 1,
   },
-  cancelButton: {
-    flex: 1,
-    marginLeft: Spacing.s,
+  invitedPlayersSection: {
+    marginTop: 24,
+  },
+  invitedPlayersTitle: {
+    marginBottom: 12,
   },
   bottomContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-  },
-  actionBar: {
-    padding: Spacing.m,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 99, 99, 0.3)", // Color más rojizo para acción de abandonar
+    padding: 16,
+  },
+  creatorButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cancelButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FF3B30", // Rojo
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flex: 1,
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: "#FF3B30", // Rojo
+    marginLeft: 8,
+    fontWeight: "600",
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#00C853", // Verde
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flex: 1,
+    marginLeft: 8,
+  },
+  editButtonText: {
+    color: "#00C853", // Verde
+    marginLeft: 8,
+    fontWeight: "600",
+  },
+  joinButton: {
+    backgroundColor: "#00C853", // Verde
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  joinButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
   },
   loadingText: {
-    marginTop: Spacing.m,
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
+    padding: 16,
   },
   errorTitle: {
-    marginBottom: Spacing.m,
+    marginBottom: 16,
   },
   errorText: {
     textAlign: "center",
-    marginBottom: Spacing.l,
+    marginBottom: 24,
   },
   errorButton: {
     minWidth: 120,
-  },
-  inviteButton: {
-    alignSelf: "flex-end",
-    marginBottom: Spacing.s,
-  },
-  invitedPlayersSection: {
-    marginTop: Spacing.m,
-  },
-  invitedPlayersTitle: {
-    marginBottom: Spacing.s,
   },
 });
