@@ -1,5 +1,3 @@
-// app/(tabs)/explore.tsx
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
@@ -36,7 +34,7 @@ const filterOptions = [
   { id: "showers", name: "Con duchas" },
 ];
 
-export default function ExploreScreen() {
+export default function FieldsScreen() {
   const colorScheme = useColorScheme();
   const { user, isInitializing: authInitializing } = useAuth();
   const {
@@ -241,7 +239,7 @@ export default function ExploreScreen() {
 
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.header}>
-          <ThemedText type="title">Explorar</ThemedText>
+          <ThemedText type="title">Canchas</ThemedText>
           <ThemedText type="body" secondary>
             Encuentra las mejores canchas
           </ThemedText>
@@ -251,7 +249,7 @@ export default function ExploreScreen() {
         <View style={styles.searchContainer}>
           <ThemedView style={styles.searchBar} variant="secondary" rounded>
             <IconSymbol
-              name="paperplane.fill"
+              name="search.field"
               size={20}
               color={Colors[colorScheme].textSecondary}
             />
@@ -420,45 +418,43 @@ const styles = StyleSheet.create({
   filterChip: {
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-    borderRadius: 20,
+    borderRadius: Shape.radius.s,
     borderWidth: 1,
   },
   fieldsList: {
     paddingHorizontal: Spacing.l,
-    paddingBottom: 100, // Extra padding for tab bar
+    paddingBottom: Spacing.xl,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
+    paddingTop: 100,
   },
   loadingText: {
     marginTop: Spacing.m,
-    textAlign: "center",
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
+    paddingHorizontal: Spacing.xl,
   },
   errorTitle: {
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.s,
   },
   errorText: {
     textAlign: "center",
     marginBottom: Spacing.l,
   },
   retryButton: {
-    minWidth: 120,
+    minWidth: 150,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
-    marginTop: Spacing.xl,
+    justifyContent: "center",
+    paddingTop: 100,
   },
   emptyTitle: {
     marginBottom: Spacing.s,
@@ -470,21 +466,19 @@ const styles = StyleSheet.create({
   clearFiltersButton: {
     minWidth: 150,
   },
-  // Estilos para la pantalla de autenticación requerida
   authRequiredContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
+    paddingHorizontal: Spacing.xl,
   },
   authRequiredTitle: {
     marginTop: Spacing.l,
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.s,
   },
   authRequiredText: {
     textAlign: "center",
     marginBottom: Spacing.l,
-    maxWidth: 300,
   },
   loginButton: {
     minWidth: 200,

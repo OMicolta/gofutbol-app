@@ -39,6 +39,11 @@ const MAPPING = {
   // Nuevos iconos añadidos
   "camera.fill": "camera-alt",
   "location.fill": "location-on",
+  // Nuevos iconos para canchas de fútbol
+  "field.soccer": "stadium",
+  "search.field": "search",
+  "field.map": "map",
+  "pin.field": "pin-drop",
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;
