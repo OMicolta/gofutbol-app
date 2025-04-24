@@ -728,14 +728,32 @@ export default function MatchDetailScreen() {
             </TouchableOpacity>
           </View>
         ) : !isCreator && !isMatchPast && match.status !== "cancelled" ? (
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={isPlayerConfirmed ? handleLeave : handleJoin}
-          >
-            <ThemedText style={styles.joinButtonText}>
-              {isPlayerConfirmed ? "Abandonar Partido" : "Unirme al Partido"}
-            </ThemedText>
-          </TouchableOpacity>
+          isPlayerConfirmed ? (
+            <TouchableOpacity
+              style={[
+                styles.leaveButton,
+                {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? "rgba(255, 59, 48, 0.15)"
+                      : "#FFEBEE",
+                  borderWidth: 1,
+                  borderColor: "#FF3B30",
+                },
+              ]}
+              onPress={handleLeave}
+            >
+              <ThemedText style={styles.leaveButtonText}>
+                Abandonar Partido
+              </ThemedText>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
+              <ThemedText style={styles.joinButtonText}>
+                Unirme al Partido
+              </ThemedText>
+            </TouchableOpacity>
+          )
         ) : null}
       </SafeAreaView>
 
@@ -960,6 +978,16 @@ const styles = StyleSheet.create({
   },
   joinButtonText: {
     color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  leaveButton: {
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  leaveButtonText: {
+    color: "#FF3B30", // Rojo
     fontWeight: "600",
     fontSize: 16,
   },
