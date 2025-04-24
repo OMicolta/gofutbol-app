@@ -59,8 +59,8 @@ export default {
         data: [
           {
             scheme: "com.gofutbol.app",
-            host: "oauth2",
-            pathPrefix: "/redirect"
+            host: "auth",
+            pathPrefix: "/google-redirect"
           }
         ],
         category: ["BROWSABLE", "DEFAULT"]
@@ -88,7 +88,7 @@ export default {
     firebaseIosClientId: process.env.FIREBASE_IOS_CLIENT_ID,
 
     eas: {
-      projectId: process.env.EAS_PROJECT_ID || 'your-project-id-here',
+      projectId: process.env.EAS_PROJECT_ID,
     },
   },
   plugins: [
