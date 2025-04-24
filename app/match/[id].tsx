@@ -47,6 +47,7 @@ export default function MatchDetailScreen() {
     leaveMatch,
     changeTeam,
     removePlayer,
+    cancelMatch,
     isLoading: isCurrentLoading,
     error: currentError,
   } = useMatches();
@@ -273,6 +274,9 @@ export default function MatchDetailScreen() {
 
   // Manejar cancelación del partido (solo para el creador)
   const handleCancelMatch = () => {
+    if (!match || !user || match.createdBy !== user.uid || isHistoricalMatch)
+      return;
+
     Alert.alert(
       "Cancelar partido",
       "¿Estás seguro de que quieres cancelar este partido? Esta acción no se puede deshacer.",
@@ -285,8 +289,19 @@ export default function MatchDetailScreen() {
           text: "Sí, cancelar",
           style: "destructive",
           onPress: async () => {
-            // Esta funcionalidad se implementará en una versión futura
-            showNotification("Funcionalidad en desarrollo", "info");
+            try {
+              await cancelMatch(match.id);
+              showNotification("Partido cancelado correctamente", "success");
+
+              // Redirigir a la pantalla de partidos
+              router.replace("/(tabs)/matches");
+            } catch (error) {
+              console.error("Error al cancelar partido:", error);
+              showNotification(
+                `Error al cancelar partido: ${(error as Error).message}`,
+                "error"
+              );
+            }
           },
         },
       ]
