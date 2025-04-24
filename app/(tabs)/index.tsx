@@ -277,14 +277,10 @@ export default function HomeScreen() {
               <View style={styles.actionCardContainer}>
                 <Card
                   style={styles.actionCard}
-                  onPress={() => handleSafeNavigation("/(tabs)/explore")}
+                  onPress={() => handleSafeNavigation("/(tabs)/fields")}
                   shadow="s"
                 >
-                  <IconSymbol
-                    name="paperplane.fill"
-                    size={24}
-                    color="#1DB954"
-                  />
+                  <IconSymbol name="soccer.field" size={24} color="#1DB954" />
                   <ThemedText
                     type="body"
                     weight="semiBold"
@@ -357,7 +353,7 @@ export default function HomeScreen() {
                 title="Ver mapa"
                 variant="ghost"
                 size="small"
-                onPress={() => handleSafeNavigation("/(tabs)/explore")}
+                onPress={() => handleSafeNavigation("/(tabs)/fields")}
               />
             </View>
 
@@ -379,7 +375,7 @@ export default function HomeScreen() {
                 <Button
                   title="Explorar Canchas"
                   size="small"
-                  onPress={() => handleSafeNavigation("/(tabs)/explore")}
+                  onPress={() => handleSafeNavigation("/(tabs)/fields")}
                   style={styles.emptyListButton}
                 />
               </ThemedView>

@@ -98,7 +98,7 @@ export default function TabLayout() {
         options={{
           title: "Canchas",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="field.soccer" color={color} />
+            <IconSymbol size={28} name="soccer.field" color={color} />
           ),
         }}
       />
