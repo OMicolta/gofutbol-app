@@ -46,6 +46,7 @@ export default function MatchDetailScreen() {
     joinMatch,
     leaveMatch,
     changeTeam,
+    removePlayer,
     isLoading: isCurrentLoading,
     error: currentError,
   } = useMatches();
@@ -222,8 +223,20 @@ export default function MatchDetailScreen() {
             text: "Remover",
             style: "destructive",
             onPress: async () => {
-              // Esta funcionalidad se implementará en una versión futura
-              showNotification("Funcionalidad en desarrollo", "info");
+              try {
+                await removePlayer(match.id, playerId);
+                showNotification("Jugador removido correctamente", "success");
+
+                // Actualizar datos del partido
+                const updatedMatch = await getMatchDetails(match.id);
+                setMatch(updatedMatch);
+              } catch (error) {
+                console.error("Error al remover jugador:", error);
+                showNotification(
+                  `Error al remover jugador: ${(error as Error).message}`,
+                  "error"
+                );
+              }
             },
           },
         ]

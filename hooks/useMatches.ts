@@ -225,6 +225,18 @@ export function useMatches() {
     }
   };
 
+  // Función para remover a un jugador del partido
+  const removePlayer = async (matchId: string, playerId: string) => {
+    try {
+      if (!user) throw new Error("Debes iniciar sesión para remover jugadores");
+      await matchStore.removePlayer(matchId, playerId, user.uid);
+    } catch (error) {
+      console.error("Error al remover jugador:", error);
+      handleFirebaseError(error);
+      throw error;
+    }
+  };
+
   return {
     ...matchStore,
     isInitializing,
@@ -240,5 +252,6 @@ export function useMatches() {
     applyFilters,
     loadMoreMatches,
     retryLoadAfterIndexError,
+    removePlayer,
   };
 }
