@@ -1,6 +1,6 @@
 // components/auth/UsernameSelector.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -42,6 +42,7 @@ export function UsernameSelector({
   const [wasChecked, setWasChecked] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [useTestMode, setUseTestMode] = useState(false);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Generar sugerencias basadas en el nombre de usuario
   useEffect(() => {
@@ -119,7 +120,7 @@ export function UsernameSelector({
     }
   };
 
-  // Manejar cambio de nombre de usuario
+  // Manejar cambio de nombre de usuario con debounce para la verificación automática
   const handleUsernameChange = (text: string) => {
     // Eliminar espacios y caracteres especiales, permitir letras, números y guiones bajos
     const formattedUsername = text
@@ -130,11 +131,31 @@ export function UsernameSelector({
     setUsername(formattedUsername);
     setWasChecked(false);
     setIsAvailable(false);
+
+    // Limpiar el timeout anterior si existe
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    // Configurar un nuevo timeout para verificar automáticamente después de un breve retraso
+    if (formattedUsername.length >= 3) {
+      setIsChecking(true); // Mostrar indicador de carga inmediatamente
+      debounceTimeout.current = setTimeout(() => {
+        checkAvailability(formattedUsername);
+      }, 500); // Verificar después de 500ms de inactividad
+    } else {
+      // Si el nombre de usuario es muy corto, marcar como verificado pero no disponible
+      setIsChecking(false);
+      setWasChecked(true);
+      setIsAvailable(false);
+    }
   };
 
-  // Verificar disponibilidad al presionar el botón
+  // Verificar disponibilidad al presionar el botón (mantenido para compatibilidad)
   const handleCheckAvailability = () => {
-    checkAvailability(username);
+    if (!wasChecked || !isChecking) {
+      checkAvailability(username);
+    }
   };
 
   // Seleccionar una sugerencia
@@ -149,6 +170,15 @@ export function UsernameSelector({
       onUsernameSelected(username);
     }
   };
+
+  // Limpiar el timeout al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
