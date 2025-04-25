@@ -264,7 +264,10 @@ export default function EditProfileScreen() {
             {/* Foto de perfil */}
             <View style={styles.photoSection}>
               <TouchableOpacity
-                style={styles.photoContainer}
+                style={[
+                  styles.photoContainer,
+                  { borderColor: Colors[colorScheme].primary },
+                ]}
                 onPress={handleChangePhoto}
                 disabled={uploadingPhoto}
               >
@@ -275,8 +278,17 @@ export default function EditProfileScreen() {
                     resizeMode="cover"
                   />
                 ) : (
-                  <ThemedView style={styles.photoPlaceholder} rounded>
-                    <ThemedText style={styles.photoPlaceholderText}>
+                  <ThemedView
+                    style={styles.photoPlaceholder}
+                    variant="secondary"
+                    rounded
+                  >
+                    <ThemedText
+                      style={[
+                        styles.photoPlaceholderText,
+                        { color: Colors[colorScheme].primary },
+                      ]}
+                    >
                       {displayName.substring(0, 1).toUpperCase()}
                     </ThemedText>
                   </ThemedView>
@@ -288,7 +300,12 @@ export default function EditProfileScreen() {
                   </View>
                 )}
 
-                <View style={styles.editPhotoButton}>
+                <View
+                  style={[
+                    styles.editPhotoButton,
+                    { backgroundColor: Colors[colorScheme].primary },
+                  ]}
+                >
                   <IconSymbol name="camera.fill" size={16} color="white" />
                 </View>
               </TouchableOpacity>
@@ -307,7 +324,14 @@ export default function EditProfileScreen() {
                 <ThemedText type="body" weight="semiBold">
                   Nombre completo
                 </ThemedText>
-                <View style={styles.inputContainer}>
+                <ThemedView
+                  style={[
+                    styles.inputContainer,
+                    formErrors.displayName && styles.inputError,
+                  ]}
+                  variant="secondary"
+                  rounded="m"
+                >
                   <View style={styles.iconContainer}>
                     <IconSymbol
                       name="person.fill"
@@ -315,7 +339,12 @@ export default function EditProfileScreen() {
                       color={Colors[colorScheme].textSecondary}
                     />
                   </View>
-                  <View style={styles.inputDivider} />
+                  <View
+                    style={[
+                      styles.inputDivider,
+                      { backgroundColor: Colors[colorScheme].border },
+                    ]}
+                  />
                   <TextInput
                     style={[styles.input, { color: Colors[colorScheme].text }]}
                     placeholder="Ingresa tu nombre completo"
@@ -323,7 +352,7 @@ export default function EditProfileScreen() {
                     value={displayName}
                     onChangeText={setDisplayName}
                   />
-                </View>
+                </ThemedView>
                 {formErrors.displayName && (
                   <ThemedText type="caption" style={styles.errorText}>
                     {formErrors.displayName}
@@ -337,24 +366,30 @@ export default function EditProfileScreen() {
                 </ThemedText>
                 <View style={styles.positionsContainer}>
                   {POSITIONS.map((pos) => (
-                    <TouchableOpacity
+                    <ThemedView
                       key={pos.id}
                       style={[
                         styles.positionChip,
-                        position === pos.id && styles.selectedPosition,
+                        position === pos.id && {
+                          backgroundColor: Colors[colorScheme].primary,
+                          borderColor: Colors[colorScheme].primary,
+                        },
                       ]}
-                      onPress={() => setPosition(pos.id)}
+                      variant={position === pos.id ? "default" : "secondary"}
+                      rounded="round"
                     >
-                      <ThemedText
-                        style={
-                          position === pos.id
-                            ? styles.selectedPositionText
-                            : undefined
-                        }
-                      >
-                        {pos.name}
-                      </ThemedText>
-                    </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setPosition(pos.id)}>
+                        <ThemedText
+                          style={
+                            position === pos.id
+                              ? styles.selectedPositionText
+                              : undefined
+                          }
+                        >
+                          {pos.name}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    </ThemedView>
                   ))}
                 </View>
               </View>
@@ -363,7 +398,11 @@ export default function EditProfileScreen() {
                 <ThemedText type="body" weight="semiBold">
                   Zona donde juegas
                 </ThemedText>
-                <View style={styles.inputContainer}>
+                <ThemedView
+                  style={styles.inputContainer}
+                  variant="secondary"
+                  rounded="m"
+                >
                   <View style={styles.iconContainer}>
                     <IconSymbol
                       name="location.fill"
@@ -371,7 +410,12 @@ export default function EditProfileScreen() {
                       color={Colors[colorScheme].textSecondary}
                     />
                   </View>
-                  <View style={styles.inputDivider} />
+                  <View
+                    style={[
+                      styles.inputDivider,
+                      { backgroundColor: Colors[colorScheme].border },
+                    ]}
+                  />
                   <TextInput
                     style={[styles.input, { color: Colors[colorScheme].text }]}
                     placeholder="Ej: Norte, Sur, Centro"
@@ -379,7 +423,7 @@ export default function EditProfileScreen() {
                     value={zone}
                     onChangeText={setZone}
                   />
-                </View>
+                </ThemedView>
               </View>
             </View>
 
@@ -389,7 +433,11 @@ export default function EditProfileScreen() {
                 Nombre de usuario
               </ThemedText>
 
-              <View style={styles.usernameBox}>
+              <ThemedView
+                style={styles.usernameBox}
+                variant="secondary"
+                rounded="m"
+              >
                 <View style={styles.usernameRow}>
                   <View style={styles.usernameInfoContainer}>
                     <ThemedText type="body" weight="semiBold">
@@ -408,26 +456,39 @@ export default function EditProfileScreen() {
                     onPress={() => setShowUsernameModal(true)}
                   >
                     <ThemedText
-                      style={styles.changeUsernameText}
+                      style={[
+                        styles.changeUsernameText,
+                        { color: Colors[colorScheme].primary },
+                      ]}
                       weight="semiBold"
                     >
                       Cambiar
                     </ThemedText>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </ThemedView>
             </View>
 
             {/* Botones de acción */}
             <View style={styles.actionsContainer}>
-              <TouchableOpacity
+              <ThemedView
                 style={styles.cancelButton}
-                onPress={() => router.back()}
+                variant="secondary"
+                rounded="m"
               >
-                <ThemedText style={styles.cancelText}>Cancelar</ThemedText>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.buttonContent}
+                  onPress={() => router.back()}
+                >
+                  <ThemedText>Cancelar</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+
               <TouchableOpacity
-                style={styles.saveButton}
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: Colors[colorScheme].primary },
+                ]}
                 onPress={handleSaveChanges}
                 disabled={isLoading}
               >
@@ -496,7 +557,6 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 2,
-    borderColor: Colors.light.primary,
     marginBottom: Spacing.s,
   },
   profilePhoto: {
@@ -510,12 +570,10 @@ const styles = StyleSheet.create({
     borderRadius: 48,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F0F0",
   },
   photoPlaceholderText: {
     fontSize: 36,
     fontWeight: "bold",
-    color: Colors.light.primary,
   },
   uploadingOverlay: {
     position: "absolute",
@@ -532,7 +590,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: Colors.light.primary,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -553,7 +610,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.m,
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.text,
   },
   inputGroup: {
     marginBottom: Spacing.m,
@@ -561,11 +617,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: Shape.radius.m,
     marginTop: Spacing.xs,
-    backgroundColor: "white",
   },
   iconContainer: {
     paddingHorizontal: Spacing.m,
@@ -577,7 +629,6 @@ const styles = StyleSheet.create({
   inputDivider: {
     width: 1,
     height: "70%",
-    backgroundColor: Colors.light.border,
   },
   input: {
     flex: 1,
@@ -604,15 +655,7 @@ const styles = StyleSheet.create({
   positionChip: {
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.light.border,
-    marginBottom: Spacing.xs,
-    backgroundColor: "white",
-  },
-  selectedPosition: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
   },
   selectedPositionText: {
     color: "white",
@@ -620,11 +663,7 @@ const styles = StyleSheet.create({
   },
   usernameBox: {
     padding: Spacing.m,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: Shape.radius.m,
     marginTop: Spacing.xs,
-    backgroundColor: "white",
   },
   usernameRow: {
     flexDirection: "row",
@@ -644,7 +683,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.m,
   },
   changeUsernameText: {
-    color: Colors.light.primary,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -656,24 +694,19 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
+    marginRight: Spacing.m,
+  },
+  buttonContent: {
+    width: "100%",
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: Spacing.m,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: Shape.radius.m,
-  },
-  cancelText: {
-    color: Colors.light.text,
-    fontWeight: "500",
   },
   saveButton: {
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.light.primary,
     borderRadius: Shape.radius.m,
   },
   saveText: {
