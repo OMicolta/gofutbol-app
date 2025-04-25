@@ -18,10 +18,12 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
-import { Spacing } from "@/constants/Colors";
+import { Colors, Spacing } from "@/constants/Colors";
 import { auth } from "@/config/firebase";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function RecoverPasswordScreen() {
+  const colorScheme = useColorScheme();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -86,13 +88,13 @@ export default function RecoverPasswordScreen() {
                 rounded
               >
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: Colors[colorScheme].text }]}
                   placeholder="Email"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor={Colors[colorScheme].placeholder}
                 />
               </ThemedView>
 
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.s,
   },
   successMessage: {
-    color: "#4CAF50",
+    color: Colors.light.success,
     marginTop: Spacing.m,
     textAlign: "center",
   },
@@ -193,7 +195,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.xs,
   },
   loginText: {
-    color: "#1DB954",
+    color: Colors.light.primary,
     fontWeight: "600",
   },
 });

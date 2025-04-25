@@ -21,11 +21,15 @@ import { Button } from "@/components/ui/Button";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 export default function LoginScreen() {
+  const colorScheme = useColorScheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     safeSignIn,
     error,
@@ -133,13 +137,13 @@ export default function LoginScreen() {
                 rounded
               >
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: Colors[colorScheme].text }]}
                   placeholder="Email"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor={Colors[colorScheme].placeholder}
                 />
               </ThemedView>
 
@@ -148,14 +152,30 @@ export default function LoginScreen() {
                 variant="secondary"
                 rounded
               >
-                <TextInput
-                  style={styles.input}
-                  placeholder="Contraseña"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  placeholderTextColor="#9E9E9E"
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, { color: Colors[colorScheme].text }]}
+                    placeholder="Contraseña"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    placeholderTextColor={Colors[colorScheme].placeholder}
+                  />
+                  <TouchableOpacity
+                    style={styles.visibilityIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <IconSymbol
+                      name={
+                        showPassword
+                          ? ("eye.slash.fill" as any)
+                          : ("eye.fill" as any)
+                      }
+                      size={22}
+                      color={Colors[colorScheme].icon}
+                    />
+                  </TouchableOpacity>
+                </View>
               </ThemedView>
 
               <Button
@@ -264,6 +284,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: "100%",
   },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  visibilityIcon: {
+    padding: Spacing.xs,
+    position: "absolute",
+    right: 0,
+    height: 50,
+    justifyContent: "center",
+  },
   loginButton: {
     marginTop: Spacing.s,
   },
@@ -275,12 +307,11 @@ const styles = StyleSheet.create({
   forgotPassword: {
     textAlign: "center",
     marginTop: Spacing.m,
-    textDecorationLine: "underline",
   },
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: Spacing.l,
+    marginBottom: Spacing.l,
   },
   divider: {
     flex: 1,
@@ -293,13 +324,11 @@ const styles = StyleSheet.create({
   socialButtonsContainer: {
     marginBottom: Spacing.l,
   },
-  googleButton: {
-    marginBottom: Spacing.m,
-  },
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: Spacing.m,
   },
   registerLink: {
     marginLeft: Spacing.xs,
@@ -312,6 +341,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: Spacing.l,
   },
   loadingText: {
     marginTop: Spacing.m,

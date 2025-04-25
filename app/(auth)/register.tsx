@@ -19,13 +19,18 @@ import { Button } from "@/components/ui/Button";
 import { Colors, Spacing } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotification } from "@/context/NotificationContext";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 export default function RegisterScreen() {
+  const colorScheme = useColorScheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     safeSignUp,
     error,
@@ -99,12 +104,12 @@ export default function RegisterScreen() {
                 rounded
               >
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: Colors[colorScheme].text }]}
                   placeholder="Nombre completo"
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor={Colors[colorScheme].placeholder}
                 />
               </ThemedView>
 
@@ -114,13 +119,13 @@ export default function RegisterScreen() {
                 rounded
               >
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: Colors[colorScheme].text }]}
                   placeholder="Email"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor={Colors[colorScheme].placeholder}
                 />
               </ThemedView>
 
@@ -129,14 +134,30 @@ export default function RegisterScreen() {
                 variant="secondary"
                 rounded
               >
-                <TextInput
-                  style={styles.input}
-                  placeholder="Contraseña"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  placeholderTextColor="#9E9E9E"
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, { color: Colors[colorScheme].text }]}
+                    placeholder="Contraseña"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    placeholderTextColor={Colors[colorScheme].placeholder}
+                  />
+                  <TouchableOpacity
+                    style={styles.visibilityIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <IconSymbol
+                      name={
+                        showPassword
+                          ? ("eye.slash.fill" as any)
+                          : ("eye.fill" as any)
+                      }
+                      size={22}
+                      color={Colors[colorScheme].icon}
+                    />
+                  </TouchableOpacity>
+                </View>
               </ThemedView>
 
               <ThemedView
@@ -144,14 +165,30 @@ export default function RegisterScreen() {
                 variant="secondary"
                 rounded
               >
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  placeholderTextColor="#9E9E9E"
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, { color: Colors[colorScheme].text }]}
+                    placeholder="Confirmar contraseña"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    placeholderTextColor={Colors[colorScheme].placeholder}
+                  />
+                  <TouchableOpacity
+                    style={styles.visibilityIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <IconSymbol
+                      name={
+                        showConfirmPassword
+                          ? ("eye.slash.fill" as any)
+                          : ("eye.fill" as any)
+                      }
+                      size={22}
+                      color={Colors[colorScheme].icon}
+                    />
+                  </TouchableOpacity>
+                </View>
               </ThemedView>
 
               <Button
@@ -237,6 +274,18 @@ const styles = StyleSheet.create({
     height: 50,
     fontSize: 16,
     width: "100%",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  visibilityIcon: {
+    padding: Spacing.xs,
+    position: "absolute",
+    right: 0,
+    height: 50,
+    justifyContent: "center",
   },
   registerButton: {
     marginTop: Spacing.s,

@@ -32,7 +32,9 @@ const MAPPING = {
   "lock.fill": { type: "material", name: "lock" },
   globe: { type: "material", name: "public" },
   "bell.fill": { type: "material", name: "notifications" },
+  "bell.slash.fill": { type: "material", name: "notifications-off" },
   "trash.fill": { type: "material", name: "delete" },
+  trash: { type: "material", name: "delete" },
   pencil: { type: "material", name: "edit" },
   "arrow.left": { type: "material", name: "arrow-back" },
   "arrow.right": { type: "material", name: "arrow-forward" },
@@ -40,6 +42,13 @@ const MAPPING = {
   minus: { type: "material", name: "remove" },
   xmark: { type: "material", name: "close" },
   logout: { type: "material", name: "logout" },
+  // Iconos para formularios
+  "eye.fill": { type: "material", name: "visibility" },
+  "eye.slash.fill": { type: "material", name: "visibility-off" },
+  // Iconos para notificaciones y mensajes
+  "envelope.fill": { type: "material", name: "mail" },
+  "info.circle.fill": { type: "material", name: "info" },
+  "xmark.circle.fill": { type: "material", name: "cancel" },
   // Nuevos iconos añadidos
   "camera.fill": { type: "material", name: "camera-alt" },
   "location.fill": { type: "material", name: "location-on" },
@@ -75,6 +84,19 @@ export function IconSymbol({
 }) {
   const colorScheme = useColorScheme();
   const iconMapping = MAPPING[name];
+
+  // Si no existe el mapping para este nombre, usar un icono por defecto
+  if (!iconMapping) {
+    console.warn(`No icon mapping found for: ${String(name)}`);
+    return (
+      <MaterialIcons
+        color={propColor || Colors[colorScheme].icon}
+        size={size}
+        name="error"
+        style={style}
+      />
+    );
+  }
 
   // Usar color del tema si se solicita
   const color = useThemeColor
